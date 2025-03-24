@@ -13,7 +13,7 @@ app.use(express.json());
 // APIルートを設定
 app.use("/mails", mailRoutes); // 追加
 app.use('/clients', clientRoutes);
-app.use('/companies', companyRoutes);
+app.use('/companies', companyRoutes); StaticRange
 
 // DB同期
 sequelize.sync()
