@@ -5,6 +5,7 @@ const sequelize = require("./config/database");
 const companyRoutes = require('./routes/companyRoutes'); 
 const mailRoutes = require("./routes/mailRoutes"); // 追加
 const clientRoutes = require('./routes/clientsRoutes'); 
+const bankAccountsRoutes = require('./routes/bankAccountsRoutes');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -13,7 +14,8 @@ app.use(express.json());
 // APIルートを設定
 app.use("/mails", mailRoutes); // 追加
 app.use('/clients', clientRoutes);
-app.use('/companies', companyRoutes); StaticRange
+app.use('/companies', companyRoutes); 
+app.use("/bank-accounts", bankAccountsRoutes);
 
 // DB同期
 sequelize.sync()

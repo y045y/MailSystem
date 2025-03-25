@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const Client = require('./Client');
 const Company = require('./Company');
+const BankAccount = require('./BankAccount');
 
 const Mail = sequelize.define('Mail', {
   id: {
@@ -70,6 +71,6 @@ const Mail = sequelize.define('Mail', {
 
 // 関連付け
 Mail.belongsTo(Client, { foreignKey: 'client_id' });
-Mail.belongsTo(Company, { foreignKey: 'bank_account_id' });
+Mail.belongsTo(BankAccount, { foreignKey: 'bank_account_id' });
 
 module.exports = Mail;
