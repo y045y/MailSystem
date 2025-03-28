@@ -1,26 +1,32 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); // sequelizeインスタンスをインポート
+const sequelize = require('../config/database');
 
-// Company モデルの定義
 const Company = sequelize.define('Company', {
   name: {
     type: DataTypes.STRING,
-    allowNull: false,  // 必須フィールド
+    allowNull: false,
   },
   bank_name: {
     type: DataTypes.STRING,
-    allowNull: true,  // 任意フィールド
+    allowNull: true,
   },
   bank_account: {
     type: DataTypes.STRING,
-    allowNull: true,  // 任意フィールド
+    allowNull: true,
+  },
+  created_at: {
+    type: DataTypes.STRING, // datetime ではなく文字列として受け取る
+    allowNull: true,
+    defaultValue: null,
+  },
+  updated_at: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: null,
   },
 }, {
-  tableName: 'company_master',  // テーブル名を指定
-  timestamps: true,  // created_at と updated_at を自動で管理
-  createdAt: 'created_at',  // カスタムフィールド名
-  updatedAt: 'updated_at',  // カスタムフィールド名
+  tableName: 'company_master',
+  timestamps: false, // Sequelizeの自動タイムスタンプ機能は使わない
 });
 
-// Company モデルをエクスポート
 module.exports = Company;

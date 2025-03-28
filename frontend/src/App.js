@@ -6,9 +6,10 @@ import MailListWithdrawals from './components/MailListWithdrawals';
 import MailListNotices from './components/MailListNotices';
 import MailListOthers from './components/MailListOthers';
 import ClientMaster from './components/ClientMaster'; // ← 取引先マスタ
+import CompanyMaster from './components/CompanyMaster'; // ← 自社マスタ
 
 const App = () => {
-  const [selectedTab, setSelectedTab] = useState('mail'); // 'mail' or 'client'
+  const [selectedTab, setSelectedTab] = useState('mail'); // 'mail' | 'client' | 'company'
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const today = new Date();
@@ -16,11 +17,11 @@ const App = () => {
     const month = (`0${today.getMonth() + 1}`).slice(-2);
     return `${year}-${month}`;
   });
+
   const [reloadKey, setReloadKey] = useState(0);
 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-
   const [receivedStartDate, setReceivedStartDate] = useState('');
   const [receivedEndDate, setReceivedEndDate] = useState('');
 
@@ -31,8 +32,6 @@ const App = () => {
     setSelectedMonth(monthStr);
 
     const firstDay = `${monthStr}-01`;
-
-    // 月末日（次の月の0日）
     const lastDateObj = new Date(year, month, 0);
     const lastDay = `${lastDateObj.getFullYear()}-${(`0${lastDateObj.getMonth() + 1}`).slice(-2)}-${(`0${lastDateObj.getDate()}`).slice(-2)}`;
 
@@ -72,6 +71,7 @@ const App = () => {
       <div style={{ marginBottom: '20px' }}>
         <button onClick={() => setSelectedTab('mail')}>郵便物</button>
         <button onClick={() => setSelectedTab('client')}>取引先マスタ</button>
+        <button onClick={() => setSelectedTab('company')}>自社マスタ</button>
       </div>
 
       {selectedTab === 'mail' ? (
@@ -134,8 +134,10 @@ const App = () => {
             reloadKey={reloadKey}
           />
         </>
-      ) : (
+      ) : selectedTab === 'client' ? (
         <ClientMaster />
+      ) : (
+        <CompanyMaster />
       )}
     </div>
   );

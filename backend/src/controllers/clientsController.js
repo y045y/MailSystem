@@ -15,7 +15,7 @@ exports.getClients = async (req, res) => {
 // ✅ 取引先を登録 (POST /clients)
 exports.createClient = async (req, res) => {
   try {
-    const { name, category, bank_name, bank_account } = req.body;
+    const { name, bank_name, bank_account } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
@@ -23,7 +23,6 @@ exports.createClient = async (req, res) => {
 
     const newClient = await Client.create({
       name,
-      category,
       bank_name,
       bank_account,
     });

@@ -78,3 +78,25 @@ exports.deleteCompany = async (req, res) => {
     res.status(500).json({ error: 'Failed to delete company', details: error.message });
   }
 };
+const BankAccount = require('../models/BankAccount');
+
+exports.createBankAccount = async (req, res) => {
+  try {
+    const { name, type, client_id } = req.body;
+
+    if (!name || !type) {
+      return res.status(400).json({ error: 'name と type は必須です' });
+    }
+
+    const newAccount = await BankAccount.create({
+      name,
+      type,
+      client_id: client_id || null,
+    });
+
+    res.status(201).json(newAccount);
+  } catch (err) {
+    console.error('❌ 口座登録エラー:', err);
+    res.status(500).json({ error: '口座登録に失敗しました', details: err.message });
+  }
+};

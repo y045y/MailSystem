@@ -6,10 +6,6 @@ const Client = sequelize.define('Client', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  category: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
   bank_name: {
     type: DataTypes.STRING,
     allowNull: true,
@@ -18,11 +14,19 @@ const Client = sequelize.define('Client', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  created_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
+  updated_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
 }, {
   tableName: 'client_master',
-  timestamps: true,
-  createdAt: 'created_at',  // データベースのカラム名に合わせる
-  updatedAt: 'updated_at',  // データベースのカラム名に合わせる
+  timestamps: false, // Sequelize の createdAt/updatedAt 自動管理を無効にする
 });
 
 module.exports = Client;
