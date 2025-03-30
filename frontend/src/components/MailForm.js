@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../styles/MailForm.css';
+
+
 
 const MailForm = ({ onReload }) => {
   const [formData, setFormData] = useState({

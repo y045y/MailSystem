@@ -92,7 +92,7 @@ exports.getMails = async (req, res) => {
   }
 };
 
-// 振込一覧取得
+
 // 振込一覧取得（日付範囲指定バージョン）
 exports.getTransferList = async (req, res) => {
   const { startDate, endDate } = req.query;
@@ -104,6 +104,7 @@ exports.getTransferList = async (req, res) => {
   try {
     const results = await sequelize.query(
       `SELECT
+        m.id,
         m.payment_date,
         m.type,
         c.name AS client_name,
@@ -125,9 +126,14 @@ exports.getTransferList = async (req, res) => {
 
     res.json(results);
   } catch (err) {
-    res.status(500).json({ error: '一覧取得失敗', detail: err.message });
+    console.error("❌ Error in getTransferList:", err);  // エラー詳細をログに出力
+    res.status(500).json({
+      error: '一覧取得失敗',
+      detail: err.message,  // 詳細なエラーメッセージをクライアントに返す
+    });
   }
 };
+
 
 // 引落一覧取得（日付範囲指定対応）
 exports.getWithdrawalList = async (req, res) => {
@@ -141,6 +147,7 @@ exports.getWithdrawalList = async (req, res) => {
   try {
     const results = await sequelize.query(
       `SELECT
+        m.id,                    -- IDを追加
         m.payment_date,
         m.type,
         c.name AS client_name,
@@ -160,25 +167,29 @@ exports.getWithdrawalList = async (req, res) => {
       }
     );
 
+    // 結果を返す
     res.json(results);
   } catch (err) {
     console.error('引落一覧取得失敗:', err);
     res.status(500).json({ error: '引落一覧取得失敗', detail: err.message });
   }
 };
+
 // 通知一覧取得（日付範囲指定）
 exports.getNoticeList = async (req, res) => {
   const { startDate, endDate } = req.query;
 
-  // バリデーション
+  // バリデーション: startDate または endDate がない場合
   if (!startDate || !endDate) {
     return res.status(400).json({ error: 'startDate と endDate は必須です' });
   }
 
   try {
+    // SQL クエリに id を追加
     const results = await sequelize.query(
       `
       SELECT
+        m.id,  -- id を追加
         m.received_at,
         m.type,
         c.name AS client_name,
@@ -196,6 +207,7 @@ exports.getNoticeList = async (req, res) => {
       }
     );
 
+    // 結果を返す
     res.json(results);
   } catch (err) {
     console.error('通知一覧の取得に失敗:', err);
@@ -206,11 +218,12 @@ exports.getNoticeList = async (req, res) => {
   }
 };
 
+
 // その他一覧取得（日付範囲指定）
 exports.getOtherList = async (req, res) => {
   const { startDate, endDate } = req.query;
 
-  // バリデーション
+  // バリデーション: startDate または endDate がない場合は 400 Bad Request
   if (!startDate || !endDate) {
     return res.status(400).json({ error: 'startDate と endDate は必須です' });
   }
@@ -219,6 +232,7 @@ exports.getOtherList = async (req, res) => {
     const results = await sequelize.query(
       `
       SELECT
+        m.id,  -- id を追加
         m.received_at,
         m.type,
         c.name AS client_name,
@@ -236,6 +250,7 @@ exports.getOtherList = async (req, res) => {
       }
     );
 
+    // 結果を返す
     res.json(results);
   } catch (err) {
     console.error('その他一覧の取得に失敗:', err);
@@ -245,3 +260,77 @@ exports.getOtherList = async (req, res) => {
     });
   }
 };
+
+// backend/controllers/mailController.js
+
+exports.updateMail = async (req, res) => {
+  const { id } = req.params;  // 対象の郵便物ID
+  const { received_at, client_id, type, payment_date, bank_account_id, amount, description, note, status } = req.body;
+
+  try {
+    // idが正しく渡されているか確認するためにログ出力
+    console.log("更新対象ID:", id);  // ここでidが正しく渡っているか確認
+
+    // 郵便物の存在を確認
+    const mail = await Mail.findByPk(id);
+    if (!mail) {
+      return res.status(404).json({ error: "郵便物が見つかりません" });
+    }
+
+    // 更新処理
+    mail.received_at = received_at || mail.received_at;
+    mail.client_id = client_id || mail.client_id;
+    mail.type = type || mail.type;
+    mail.payment_date = payment_date || mail.payment_date;
+    mail.bank_account_id = bank_account_id || mail.bank_account_id;
+    mail.amount = amount || mail.amount;
+    mail.description = description || mail.description;
+    mail.note = note || mail.note;
+    mail.status = status || mail.status;
+
+    // 保存
+    await mail.save();  // データベースの更新
+
+    res.status(200).json({
+      success: true,
+      message: "郵便物が更新されました",
+      mail,  // 更新された郵便物データを返す
+    });
+  } catch (error) {
+    console.error("❌ Error updating mail:", error);
+    res.status(500).json({
+      error: "更新処理に失敗しました",
+      details: error.message,
+    });
+  }
+};
+
+// backend/controllers/mailController.js
+exports.deleteMail = async (req, res) => {
+  const { id } = req.params;
+  console.log("削除対象ID:", id);  // バックエンドでも確認
+
+  if (!id) {
+    return res.status(400).json({ error: "郵便物IDが必要です" });
+  }
+
+  try {
+    const mail = await Mail.findByPk(id);
+    if (!mail) {
+      return res.status(404).json({ error: "郵便物が見つかりません" });
+    }
+
+    await mail.destroy();  // データベースから削除
+
+    res.status(200).json({ success: true, message: "郵便物が削除されました" });
+  } catch (error) {
+    console.error("❌ Error deleting mail:", error);
+    res.status(500).json({
+      error: "削除処理に失敗しました",
+      details: error.message
+    });
+  }
+};
+
+
+

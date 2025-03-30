@@ -1,4 +1,4 @@
-import './App.css';
+import './App.css'; 
 import React, { useState, useEffect } from 'react';
 import MailForm from './components/MailForm';
 import MailListTransfers from './components/MailListTransfers';

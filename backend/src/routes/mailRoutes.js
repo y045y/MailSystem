@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
+// mailControllerをインポート
+const mailController = require("../controllers/mailController");
+
 const {
   createMail,
   getMails,
@@ -8,7 +11,7 @@ const {
   getWithdrawalList,
   getNoticeList,
   getOtherList
-} = require("../controllers/mailController");
+} = mailController;  // 必要なメソッドを個別にインポート
 
 // 郵便物を新規登録
 router.post("/", createMail);
@@ -27,5 +30,11 @@ router.get("/notices", getNoticeList);
 
 // その他一覧（type = 'その他'）
 router.get("/others", getOtherList);
+
+// 郵便物修正エンドポイント
+router.put('/:id', mailController.updateMail);
+
+// 削除エンドポイント（DELETE）
+router.delete('/:id', mailController.deleteMail);
 
 module.exports = router;

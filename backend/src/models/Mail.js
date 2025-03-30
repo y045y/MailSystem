@@ -14,10 +14,6 @@ const Mail = sequelize.define('Mail', {
     type: DataTypes.DATE,
     allowNull: false,
   },
-  sender: {  // 修正: sender を追加
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
   client_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
