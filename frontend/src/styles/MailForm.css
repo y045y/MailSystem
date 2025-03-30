@@ -13,7 +13,7 @@
   /* ラベルのスタイル */
   .mail-form .form-label {
     font-weight: bold;             /* ラベル文字を太字に */
-    margin-bottom: 8px;            /* ラベルと入力フィールドの間隔 */
+    margin-bottom: 50px;            /* ラベルと入力フィールドの間隔 */
     color: #495057;                /* 色を少し濃い目に */
   }
   
@@ -58,6 +58,7 @@
     .mail-form {
       width: 100%;                  /* 小さな画面では幅100% */
       padding: 15px;                /* 小さくするためにパディングを調整 */
+      grid-template-columns: 1fr;   /* 1列表示に変更 */
     }
   
     .mail-form .form-control,

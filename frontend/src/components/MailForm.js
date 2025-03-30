@@ -99,8 +99,8 @@ const MailForm = ({ onReload }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <label>
-        届いた日:
+      <label className="form-label">
+        確認日:
         <input
           type="date"
           name="received_at"
@@ -117,21 +117,21 @@ const MailForm = ({ onReload }) => {
           onChange={handleChange}
           required
         >
-          <option value="">選択してください</option>
+          <option value="">選択可</option>
           {clients.map(client => (
             <option key={client.id} value={client.id}>{client.name}</option>
           ))}
         </select>
       </label>
       <label>
-        郵便物の種類:
+        郵便種別:
         <select
           name="type"
           value={formData.type}
           onChange={handleChange}
           required
         >
-          <option value="">選択してください</option>
+          <option value="">選択可</option>
           <option value="引落">引落</option>
           <option value="振込">振込</option>
           <option value="通知">通知</option>
@@ -148,7 +148,7 @@ const MailForm = ({ onReload }) => {
             onChange={handleChange}
             required
           >
-            <option value="">選択してください</option>
+            <option value="">選択可</option>
             {bankAccounts.map(account => (
               <option key={account.id} value={account.id}>{account.name}</option>
             ))}
@@ -157,7 +157,7 @@ const MailForm = ({ onReload }) => {
       )}
 
       <label>
-        支払期限・引き落とし日:
+        支払期限・引落日:
         <input
           type="date"
           name="payment_date"
