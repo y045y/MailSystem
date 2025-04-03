@@ -10,8 +10,10 @@ const {
   getTransferList,
   getWithdrawalList,
   getNoticeList,
-  getOtherList
+  getOtherList,
+  getTransferListByMonth
 } = mailController;  // 必要なメソッドを個別にインポート
+
 
 // 郵便物を新規登録
 router.post("/", createMail);
@@ -36,5 +38,7 @@ router.put('/:id', mailController.updateMail);
 
 // 削除エンドポイント（DELETE）
 router.delete('/:id', mailController.deleteMail);
+
+router.get('/:month', getTransferListByMonth);
 
 module.exports = router;
