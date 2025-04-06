@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 
-
 const MailListNotices = ({ month, startDate, endDate }) => {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editNotice, setEditNotice] = useState(null); // 修正対象の通知情報
+  const [editNotice, setEditNotice] = useState(null);
 
   useEffect(() => {
     if (!month || !startDate || !endDate) return;
@@ -29,13 +28,11 @@ const MailListNotices = ({ month, startDate, endDate }) => {
       });
   }, [month, startDate, endDate]);
 
-  // 修正ボタンを押したときの処理
   const handleEdit = (id) => {
     const noticeToEdit = notices.find(item => item.id === id);
-    setEditNotice(noticeToEdit); // 編集対象の通知情報を設定
+    setEditNotice(noticeToEdit);
   };
 
-  // 通知情報修正処理
   const handleSave = () => {
     if (!editNotice || !editNotice.id) {
       console.error('通知IDが存在しません');
@@ -46,15 +43,12 @@ const MailListNotices = ({ month, startDate, endDate }) => {
       .then(response => {
         console.log("通知が更新されました:", response.data);
         setNotices(notices.map(item => item.id === editNotice.id ? editNotice : item));
-        setEditNotice(null);  // 編集モードを終了
+        setEditNotice(null);
       })
       .catch(error => console.error('更新に失敗:', error));
   };
 
-  // 削除処理
   const handleDelete = (id) => {
-    console.log("削除対象ID:", id);  // IDが正しく渡っているか確認
-
     if (!id) {
       console.error("IDが渡されていません。削除できません。");
       return;
@@ -63,7 +57,7 @@ const MailListNotices = ({ month, startDate, endDate }) => {
     axios.delete(`http://localhost:5000/mails/${id}`)
       .then(response => {
         console.log("通知が削除されました:", response.data);
-        setNotices(notices.filter(item => item.id !== id)); // リストから削除
+        setNotices(notices.filter(item => item.id !== id));
       })
       .catch(error => console.error('削除に失敗:', error));
   };
@@ -74,7 +68,6 @@ const MailListNotices = ({ month, startDate, endDate }) => {
     <div>
       <h2>通知一覧（{notices.length}件）</h2>
 
-      {/* 通知情報修正フォーム */}
       {editNotice && (
         <div>
           <h3>通知情報修正</h3>
@@ -116,9 +109,8 @@ const MailListNotices = ({ month, startDate, endDate }) => {
         </div>
       )}
 
-      {/* 通知一覧の表示 */}
-      <table border="1">
-        <thead>
+      <table className="table table-bordered">
+        <thead className="table-dark">
           <tr>
             <th>受取日</th>
             <th>取引先</th>
@@ -131,15 +123,25 @@ const MailListNotices = ({ month, startDate, endDate }) => {
         <tbody>
           {notices.map((item, index) => (
             <tr key={index}>
-             <td>{item.received_at ? format(new Date(item.received_at), 'MM/dd') : '---'}</td>
+              <td>{item.received_at ? format(new Date(item.received_at), 'MM/dd') : '---'}</td>
               <td>{item.client_name}</td>
               <td>{item.description}</td>
               <td>{item.note}</td>
               <td>
-                <button onClick={() => handleEdit(item.id)}>修正</button>  {/* 修正ボタン */}
+                <button
+                  onClick={() => handleEdit(item.id)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  修正
+                </button>
               </td>
               <td>
-                <button onClick={() => handleDelete(item.id)}>削除</button>  {/* 削除ボタン */}
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="btn btn-danger btn-sm"
+                >
+                  削除
+                </button>
               </td>
             </tr>
           ))}

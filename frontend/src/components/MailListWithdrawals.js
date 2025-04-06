@@ -9,7 +9,6 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
   const [loading, setLoading] = useState(true);
   const [editWithdrawal, setEditWithdrawal] = useState(null);
 
-  // データ取得
   useEffect(() => {
     if (!startDate || !endDate) return;
 
@@ -64,23 +63,20 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
     <div>
       <h2>引落一覧（{withdrawals.length}件）</h2>
 
-{/* ✅ PDFダウンロードボタン（右寄せ） */}
-{withdrawals.length > 0 && (
-  <div style={{ marginBottom: '1rem', textAlign: 'right' }}>
-    <PDFDownloadLink
-      document={<WithdrawalsDocument withdrawals={withdrawals} month={month} />}
-      fileName={`引落一覧_${month}.pdf`}
-    >
-      {({ loading }) => (loading ? 'PDF生成中...' : 'PDFダウンロード')}
-    </PDFDownloadLink>
-  </div>
-)}
+      {withdrawals.length > 0 && (
+        <div style={{ marginBottom: '1rem', textAlign: 'right' }}>
+          <PDFDownloadLink
+            document={<WithdrawalsDocument withdrawals={withdrawals} month={month} />}
+            fileName={`引落一覧_${month}.pdf`}
+          >
+            {({ loading }) => (loading ? 'PDF生成中...' : 'PDFダウンロード')}
+          </PDFDownloadLink>
+        </div>
+      )}
 
-
-      {/* ✅ 修正フォーム */}
       {editWithdrawal && (
         <div>
-          <h3>振込修正</h3>
+          <h3>引落修正</h3>
           <form>
             <label>
               支払日:
@@ -147,9 +143,9 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
         </div>
       )}
 
-      {/* ✅ 引落一覧テーブル */}
-      <table border="1">
-        <thead>
+      {/* ✅ 引落一覧テーブル（修正済み） */}
+      <table className="table table-bordered">
+        <thead className="table-dark">
           <tr>
             <th>引落日</th>
             <th>取引先</th>
@@ -170,8 +166,22 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
               <td>{item.bank_account_name || `${item.bank_name || ''}（${item.bank_account || ''}）` || '―'}</td>
               <td>{item.description || ''}</td>
               <td>{item.note || ''}</td>
-              <td><button onClick={() => handleEdit(item.id)}>修正</button></td>
-              <td><button onClick={() => handleDelete(item.id)}>削除</button></td>
+              <td>
+                <button
+                  onClick={() => handleEdit(item.id)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  修正
+                </button>
+              </td>
+              <td>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="btn btn-danger btn-sm"
+                >
+                  削除
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

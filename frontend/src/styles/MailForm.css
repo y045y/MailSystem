@@ -66,4 +66,9 @@ MailForm.css
       padding: 8px;                 /* 入力フィールドのパディング */
     }
   }
+  input[type="date"].form-control {
+    height: 38px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
   

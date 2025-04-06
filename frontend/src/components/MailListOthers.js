@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 
-
 const MailListOthers = ({ startDate, endDate }) => {
   const [others, setOthers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editItem, setEditItem] = useState(null);  // 編集対象のアイテム
+  const [editItem, setEditItem] = useState(null);
 
   useEffect(() => {
     if (!startDate || !endDate) return;
@@ -26,12 +25,10 @@ const MailListOthers = ({ startDate, endDate }) => {
       });
   }, [startDate, endDate]);
 
-  // 編集ボタンが押された時の処理
   const handleEdit = (item) => {
-    setEditItem(item);  // 編集対象をセット
+    setEditItem(item);
   };
 
-  // 編集内容を保存する処理
   const handleSave = () => {
     if (!editItem || !editItem.id) {
       console.error('アイテムIDが存在しません');
@@ -41,16 +38,13 @@ const MailListOthers = ({ startDate, endDate }) => {
     axios.put(`http://localhost:5000/mails/${editItem.id}`, editItem)
       .then(response => {
         console.log("アイテムが更新されました:", response.data);
-        setOthers(others.map(item => item.id === editItem.id ? editItem : item));  // リストを更新
-        setEditItem(null);  // 編集モードを終了
+        setOthers(others.map(item => item.id === editItem.id ? editItem : item));
+        setEditItem(null);
       })
       .catch(error => console.error('更新に失敗:', error));
   };
 
-  // 削除処理
   const handleDelete = (id) => {
-    console.log("削除対象ID:", id);
-
     if (!id) {
       console.error("IDが渡されていません。削除できません。");
       return;
@@ -59,7 +53,7 @@ const MailListOthers = ({ startDate, endDate }) => {
     axios.delete(`http://localhost:5000/mails/${id}`)
       .then(response => {
         console.log("アイテムが削除されました:", response.data);
-        setOthers(others.filter(item => item.id !== id));  // リストから削除
+        setOthers(others.filter(item => item.id !== id));
       })
       .catch(error => console.error('削除に失敗:', error));
   };
@@ -70,7 +64,6 @@ const MailListOthers = ({ startDate, endDate }) => {
     <div>
       <h2>その他一覧（{others.length}件）</h2>
 
-      {/* 編集フォーム */}
       {editItem && (
         <div>
           <h3>アイテム編集</h3>
@@ -112,8 +105,8 @@ const MailListOthers = ({ startDate, endDate }) => {
         </div>
       )}
 
-      <table border="1">
-        <thead>
+      <table className="table table-bordered">
+        <thead className="table-dark">
           <tr>
             <th>受取日</th>
             <th>取引先</th>
@@ -131,10 +124,20 @@ const MailListOthers = ({ startDate, endDate }) => {
               <td>{item.description}</td>
               <td>{item.note}</td>
               <td>
-                <button onClick={() => handleEdit(item)}>修正</button>
+                <button
+                  onClick={() => handleEdit(item)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  修正
+                </button>
               </td>
               <td>
-                <button onClick={() => handleDelete(item.id)}>削除</button>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="btn btn-danger btn-sm"
+                >
+                  削除
+                </button>
               </td>
             </tr>
           ))}

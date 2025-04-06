@@ -182,42 +182,48 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         )}
       </div>
 
-      <table border="1">
-        <thead>
-          <tr>
-            <th>支払日</th>
-            <th>取引先</th>
-            <th>金額</th>
-            <th>口座</th>
-            <th>説明</th>
-            <th>メモ</th>
-            <th>修正</th>
-            <th>削除</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transfers.map((item, index) => (
-            <tr key={item.id || index}>
-              <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '---'}</td>
-              <td>{item.client_name}</td>
-              <td>{item.amount}</td>
-              <td>{item.bank_account_name}</td>
-              <td>{item.description}</td>
-              <td>{item.note}</td>
-              <td>
-                <button onClick={() => handleEdit(item.id)}>修正</button>  {/* 修正ボタン */}
-              </td>
-              <td>
-                <button onClick={() => handleDelete(item.id)}>削除</button>  {/* 削除ボタン */}
-              </td>
-              {/* <td>
-                <button onClick={() => handleEdit(item.id)}>修正</button>
-                <button onClick={() => handleDelete(item.id)}>削除</button>
-              </td> */}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <table className="table table-bordered">
+  <thead className="table-dark">
+    <tr>
+      <th>支払日</th>
+      <th>取引先</th>
+      <th>金額</th>
+      <th>口座</th>
+      <th>説明</th>
+      <th>メモ</th>
+      <th>修正</th>
+      <th>削除</th>
+    </tr>
+  </thead>
+  <tbody>
+    {transfers.map((item, index) => (
+      <tr key={item.id || index}>
+        <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '---'}</td>
+        <td>{item.client_name}</td>
+        <td>{item.amount}</td>
+        <td>{item.bank_account_name}</td>
+        <td>{item.description}</td>
+        <td>{item.note}</td>
+        <td>
+          <button
+            onClick={() => handleEdit(item.id)}
+            className="btn btn-secondary btn-sm"
+          >
+            修正
+          </button>
+        </td>
+        <td>
+          <button
+            onClick={() => handleDelete(item.id)}
+            className="btn btn-danger btn-sm"
+          >
+            削除
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
     </div>
   );
 };

@@ -121,4 +121,8 @@ input[type="date"]:focus {
   margin: 0 auto;
   padding: 20px;
 }
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dee2e6; /* Bootstrap標準と同じ色 */
+}
 

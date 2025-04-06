@@ -70,12 +70,32 @@ const App = () => {
   return (
     <div className="App">
       <h1>郵便物管理システム</h1>
-      {/* タブ切り替え */}
-      <div style={{ marginBottom: '20px' }}>
-        <button onClick={() => setSelectedTab('mail')}>郵便物</button>
-        <button onClick={() => setSelectedTab('client')}>取引先マスタ</button>
-        <button onClick={() => setSelectedTab('company')}>自社マスタ</button>
-      </div>
+{/* タブ切り替え */}
+<div className="mb-3">
+  <button
+    onClick={() => setSelectedTab('mail')}
+    className="btn btn-secondary me-2"
+    style={{ minWidth: '100px' }}
+  >
+    郵便物
+  </button>
+  <button
+    onClick={() => setSelectedTab('client')}
+    className="btn btn-secondary me-2"
+    style={{ minWidth: '100px' }}
+  >
+    取引先マスタ
+  </button>
+  <button
+    onClick={() => setSelectedTab('company')}
+    className="btn btn-secondary"
+    style={{ minWidth: '100px' }}
+  >
+    自社マスタ
+  </button>
+</div>
+
+
 
       {selectedTab === 'mail' ? (
         <>
@@ -85,14 +105,34 @@ const App = () => {
           <hr />
 
           {/* 月切り替え */}
-          <div>
-            <label>表示する月: {selectedMonth}</label>
-            <div style={{ marginTop: '10px' }}>
-              <button onClick={handlePrevMonth}>前月</button>
-              <button onClick={handleThisMonth}>当月</button>
-              <button onClick={handleNextMonth}>次月</button>
-            </div>
-          </div>
+{/* 月切り替えボタン */}
+<div className="mb-3">
+  <label className="d-block mb-2">表示する月: {selectedMonth}</label>
+  <div>
+    <button
+      onClick={handlePrevMonth}
+      className="btn btn-secondary me-2"
+      style={{ minWidth: '80px' }}
+    >
+      前月
+    </button>
+    <button
+      onClick={handleThisMonth}
+      className="btn btn-secondary me-2"
+      style={{ minWidth: '80px' }}
+    >
+      当月
+    </button>
+    <button
+      onClick={handleNextMonth}
+      className="btn btn-secondary"
+      style={{ minWidth: '80px' }}
+    >
+      次月
+    </button>
+  </div>
+</div>
+
 
           {/* 支払日（振込・引落） */}
           <div style={{ marginBottom: '30px' }}>
