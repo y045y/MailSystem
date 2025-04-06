@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const ClientMaster = () => {
   const [clients, setClients] = useState([]);
@@ -15,7 +16,6 @@ const ClientMaster = () => {
   const [form, setForm] = useState(initialForm);
   const [editClient, setEditClient] = useState(null);
 
-  // 取引先一覧取得（withdrawal_companyを含む）
   useEffect(() => {
     fetchClients();
   }, []);
@@ -29,7 +29,6 @@ const ClientMaster = () => {
     }
   };
 
-  // 自社口座一覧取得（セレクトボックス用）
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -42,7 +41,6 @@ const ClientMaster = () => {
     fetchCompanies();
   }, []);
 
-  // 入力変更処理
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (editClient) {
@@ -52,7 +50,6 @@ const ClientMaster = () => {
     }
   };
 
-  // 共通の登録/更新データ整形
   const getFormData = (source) => ({
     ...source,
     withdrawal_company_id: source.withdrawal_company_id
@@ -60,14 +57,13 @@ const ClientMaster = () => {
       : null,
   });
 
-  // 登録・更新送信
   const handleSubmit = async (e) => {
     e.preventDefault();
     const raw = editClient || form;
     const data = getFormData(raw);
 
-    if (!data.name.trim() || !data.bank_account.trim()) {
-      alert('取引先名と口座番号は必須です');
+    if (!data.name.trim()) {
+      alert('取引先名は必須です');
       return;
     }
 
@@ -85,7 +81,6 @@ const ClientMaster = () => {
     }
   };
 
-  // 編集開始
   const handleEdit = (client) => {
     setEditClient({
       ...client,
@@ -93,7 +88,6 @@ const ClientMaster = () => {
     });
   };
 
-  // 削除処理
   const handleDelete = async (id) => {
     if (!window.confirm('本当に削除しますか？')) return;
     try {
@@ -105,70 +99,81 @@ const ClientMaster = () => {
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>取引先マスタ</h2>
+    <div className="container py-4">
+      <h2 className="mb-4">取引先マスタ</h2>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
-        <input
-          name="name"
-          value={editClient ? editClient.name : form.name}
-          onChange={handleChange}
-          placeholder="取引先名"
-          required
-          style={{ width: '150px', marginRight: '10px' }}
-        />
-        <input
-          name="bank_name"
-          value={editClient ? editClient.bank_name : form.bank_name}
-          onChange={handleChange}
-          placeholder="銀行名"
-          style={{ width: '150px', marginRight: '10px' }}
-        />
-        <input
-          name="bank_account"
-          value={editClient ? editClient.bank_account : form.bank_account}
-          onChange={handleChange}
-          placeholder="口座番号"
-          required
-          style={{ width: '150px', marginRight: '10px' }}
-        />
-
-<select
-  name="withdrawal_company_id"
-  value={
-    (editClient
-      ? editClient.withdrawal_company_id?.toString()
-      : form.withdrawal_company_id?.toString()) || ''
-  }
-  onChange={handleChange}
-  style={{ width: '200px', marginRight: '10px' }}
->
-  <option value="">自社口座を選択</option>
-  {companies.map((company) => (
-    <option key={company.id} value={company.id.toString()}>
-      {company.bank_name}（{company.bank_account}）
-    </option>
-  ))}
-</select>
-
-
-        <button type="submit">{editClient ? '保存' : '取引先追加'}</button>
-        {editClient && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditClient(null);
-              setForm(initialForm);
-            }}
-            style={{ marginLeft: '10px' }}
+      <form onSubmit={handleSubmit} className="row g-2 mb-4 align-items-end">
+        <div className="col-auto">
+          <label className="form-label">取引先名</label>
+          <input
+            name="name"
+            value={(editClient ? editClient.name : form.name) ?? ''}
+            onChange={handleChange}
+            className="form-control"
+            required
+          />
+        </div>
+        <div className="col-auto">
+          <label className="form-label">銀行名</label>
+          <input
+            name="bank_name"
+            value={(editClient ? editClient.bank_name : form.bank_name) ?? ''}
+            onChange={handleChange}
+            className="form-control"
+            placeholder="空欄可"
+          />
+        </div>
+        <div className="col-auto">
+          <label className="form-label">口座番号</label>
+          <input
+            name="bank_account"
+            value={(editClient ? editClient.bank_account : form.bank_account) ?? ''}
+            onChange={handleChange}
+            className="form-control"
+            placeholder="空欄可"
+          />
+        </div>
+        <div className="col-auto">
+          <label className="form-label">引落口座（自社）</label>
+          <select
+            name="withdrawal_company_id"
+            value={
+              (editClient
+                ? editClient.withdrawal_company_id?.toString()
+                : form.withdrawal_company_id?.toString()) || ''
+            }
+            onChange={handleChange}
+            className="form-select"
           >
-            キャンセル
+            <option value="">自社口座を選択</option>
+            {companies.map((company) => (
+              <option key={company.id} value={company.id.toString()}>
+                {company.bank_name}（{company.bank_account}）
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-auto">
+          <button type="submit" className="btn btn-secondary">
+            {editClient ? '保存' : '取引先追加'}
           </button>
-        )}
+          {editClient && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditClient(null);
+                setForm(initialForm);
+              }}
+              className="btn btn-outline-secondary ms-2"
+            >
+              キャンセル
+            </button>
+          )}
+        </div>
       </form>
 
-      <table border="1" cellPadding="8">
-        <thead>
+      <table className="table table-bordered">
+        <thead className="table-dark">
           <tr>
             <th>取引先名</th>
             <th>銀行名</th>
@@ -181,16 +186,18 @@ const ClientMaster = () => {
           {clients.map((c) => (
             <tr key={c.id}>
               <td>{c.name}</td>
-              <td>{c.bank_name}</td>
-              <td>{c.bank_account}</td>
+              <td>{c.bank_name || '―'}</td>
+              <td>{c.bank_account || '―'}</td>
               <td>
                 {c.withdrawal_company
                   ? `${c.withdrawal_company.bank_name}（${c.withdrawal_company.bank_account}）`
-                  : ''}
+                  : '―'}
               </td>
               <td>
-                <button onClick={() => handleEdit(c)}>修正</button>
-                <button onClick={() => handleDelete(c.id)} style={{ marginLeft: '5px' }}>
+                <button className="btn btn-sm btn-secondary  me-2" onClick={() => handleEdit(c)}>
+                  修正
+                </button>
+                <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c.id)}>
                   削除
                 </button>
               </td>

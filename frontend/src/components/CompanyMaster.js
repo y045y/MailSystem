@@ -1,20 +1,17 @@
 // 📁 src/components/CompanyMaster.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const CompanyMaster = () => {
-  const [companies, setCompanies] = useState([]); // 自社口座一覧
-  const [form, setForm] = useState({
-    bank_name: '',
-    bank_account: '',
-  });
-  const [editCompany, setEditCompany] = useState(null); // 編集対象
+  const [companies, setCompanies] = useState([]);
+  const [form, setForm] = useState({ bank_name: '', bank_account: '' });
+  const [editCompany, setEditCompany] = useState(null);
 
   useEffect(() => {
     fetchCompanies();
   }, []);
 
-  // 自社口座一覧取得 (GET /company-master)
   const fetchCompanies = async () => {
     try {
       const res = await axios.get('http://localhost:5000/company-master');
@@ -25,10 +22,11 @@ const CompanyMaster = () => {
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     if (editCompany) {
-      setEditCompany({ ...editCompany, [e.target.name]: e.target.value });
+      setEditCompany({ ...editCompany, [name]: value });
     } else {
-      setForm({ ...form, [e.target.name]: e.target.value });
+      setForm({ ...form, [name]: value });
     }
   };
 
@@ -71,38 +69,54 @@ const CompanyMaster = () => {
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h2>自社マスタ（口座一覧）</h2>
+    <div className="container py-4">
+      <h2 className="mb-4">自社マスタ（口座一覧）</h2>
 
-      {/* 登録/編集フォーム */}
-      <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
-        <input
-          name="bank_name"
-          value={editCompany ? editCompany.bank_name : form.bank_name}
-          onChange={handleChange}
-          placeholder="銀行名（例：三井住友）"
-          required
-          style={{ width: '150px', marginRight: '10px' }}
-        />
-        <input
-          name="bank_account"
-          value={editCompany ? editCompany.bank_account : form.bank_account}
-          onChange={handleChange}
-          placeholder="口座番号（例：1234567）"
-          required
-          style={{ width: '150px', marginRight: '10px' }}
-        />
-        <button type="submit">{editCompany ? '保存' : '口座追加'}</button>
-        {editCompany && (
-          <button type="button" onClick={() => setEditCompany(null)} style={{ marginLeft: '10px' }}>
-            キャンセル
+      {/* 登録・編集フォーム */}
+      <form onSubmit={handleSubmit} className="row g-3 mb-4 align-items-end">
+        <div className="col-auto">
+          <label className="form-label">銀行名</label>
+          <input
+            type="text"
+            name="bank_name"
+            value={editCompany ? editCompany.bank_name : form.bank_name}
+            onChange={handleChange}
+            className="form-control"
+            placeholder="例：三井住友"
+            required
+          />
+        </div>
+        <div className="col-auto">
+          <label className="form-label">口座番号</label>
+          <input
+            type="text"
+            name="bank_account"
+            value={editCompany ? editCompany.bank_account : form.bank_account}
+            onChange={handleChange}
+            className="form-control"
+            placeholder="例：1234567"
+            required
+          />
+        </div>
+        <div className="col-auto">
+          <button type="submit" className="btn btn-secondary">
+            {editCompany ? '保存' : '口座追加'}
           </button>
-        )}
+          {editCompany && (
+            <button
+              type="button"
+              onClick={() => setEditCompany(null)}
+              className="btn btn-outline-secondary ms-2"
+            >
+              キャンセル
+            </button>
+          )}
+        </div>
       </form>
 
-      {/* 一覧表示 */}
-      <table border="1" cellPadding="8">
-        <thead>
+      {/* 一覧表示テーブル */}
+      <table className="table table-bordered">
+        <thead className="table-dark">
           <tr>
             <th>銀行名</th>
             <th>口座番号</th>
@@ -115,8 +129,18 @@ const CompanyMaster = () => {
               <td>{c.bank_name}</td>
               <td>{c.bank_account}</td>
               <td>
-                <button onClick={() => handleEdit(c)}>修正</button>
-                <button onClick={() => handleDelete(c.id)} style={{ marginLeft: '5px' }}>削除</button>
+                <button
+                  className="btn btn-sm btn-secondary me-2"
+                  onClick={() => handleEdit(c)}
+                >
+                  修正
+                </button>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={() => handleDelete(c.id)}
+                >
+                  削除
+                </button>
               </td>
             </tr>
           ))}
