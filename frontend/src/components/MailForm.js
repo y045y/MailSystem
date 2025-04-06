@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/MailForm.css';
-
-
 
 const MailForm = ({ onReload }) => {
   const [formData, setFormData] = useState({
@@ -20,23 +19,33 @@ const MailForm = ({ onReload }) => {
   const [clients, setClients] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
 
-  // 取引先取得
   useEffect(() => {
     axios.get('http://localhost:5000/clients')
       .then(response => setClients(response.data))
       .catch(error => console.error('クライアントデータの取得に失敗:', error));
   }, []);
 
-  // 郵便物の種類 or 取引先変更時に口座取得
   useEffect(() => {
     const fetchBankAccounts = async () => {
       try {
         if (formData.type === '振込' && formData.sender) {
-          const res = await axios.get(`http://localhost:5000/bank-accounts/client/${formData.sender}`);
-          setBankAccounts(res.data);
+          const res = await axios.get(`http://localhost:5000/clients/${formData.sender}`);
+          const client = res.data;
+          if (client.bank_name && client.bank_account) {
+            setBankAccounts([{
+              id: client.id,
+              name: `${client.bank_name}（${client.bank_account}）`
+            }]);
+          } else {
+            setBankAccounts([]);
+          }
         } else if (formData.type === '引落' || formData.type === 'カードの請求書') {
-          const res = await axios.get(`http://localhost:5000/bank-accounts/company`);
-          setBankAccounts(res.data);
+          const res = await axios.get(`http://localhost:5000/company-master`);
+          const companies = res.data;
+          setBankAccounts(companies.map(c => ({
+            id: c.id,
+            name: `${c.bank_name}（${c.bank_account}）`
+          })));
         } else {
           setBankAccounts([]);
         }
@@ -45,6 +54,7 @@ const MailForm = ({ onReload }) => {
         setBankAccounts([]);
       }
     };
+
     fetchBankAccounts();
   }, [formData.type, formData.sender]);
 
@@ -74,8 +84,6 @@ const MailForm = ({ onReload }) => {
     axios.post('http://localhost:5000/mails', dataToSend)
       .then(response => {
         console.log('データが送信されました:', response.data);
-
-        // 入力初期化
         setFormData({
           received_at: '',
           sender: '',
@@ -88,8 +96,6 @@ const MailForm = ({ onReload }) => {
           bank_account_id: ''
         });
         setBankAccounts([]);
-
-        // 一覧更新通知
         if (onReload) onReload();
       })
       .catch(error => {
@@ -98,103 +104,122 @@ const MailForm = ({ onReload }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label className="form-label">
-        確認日:
-        <input
-          type="date"
-          name="received_at"
-          value={formData.received_at}
-          onChange={handleChange}
-          required
-        />
-      </label>
-      <label>
-        取引先:
-        <select
-          name="sender"
-          value={formData.sender}
-          onChange={handleChange}
-          required
-        >
-          <option value="">選択可</option>
-          {clients.map(client => (
-            <option key={client.id} value={client.id}>{client.name}</option>
-          ))}
-        </select>
-      </label>
-      <label>
-        郵便種別:
-        <select
-          name="type"
-          value={formData.type}
-          onChange={handleChange}
-          required
-        >
-          <option value="">選択可</option>
-          <option value="引落">引落</option>
-          <option value="振込">振込</option>
-          <option value="通知">通知</option>
-          <option value="その他">その他</option>
-        </select>
-      </label>
-
-      {(formData.type === '振込' || formData.type === '引落' || formData.type === 'カードの請求書') && (
-        <label>
-          振込・引落口座:
-          <select
-            name="bank_account_id"
-            value={formData.bank_account_id}
+    <form onSubmit={handleSubmit} className="p-3">
+      <div className="row g-3">
+        <div className="col-12 col-md-1">
+          <label className="form-label">確認日:</label>
+          <input
+            type="date"
+            name="received_at"
+            value={formData.received_at}
             onChange={handleChange}
+            className="form-control"
+            required
+          />
+        </div>
+
+        <div className="col-12 col-md-2">
+          <label className="form-label">取引先:</label>
+          <select
+            name="sender"
+            value={formData.sender}
+            onChange={handleChange}
+            className="form-select"
             required
           >
             <option value="">選択可</option>
-            {bankAccounts.map(account => (
-              <option key={account.id} value={account.id}>{account.name}</option>
+            {clients.map(client => (
+              <option key={client.id} value={client.id}>{client.name}</option>
             ))}
           </select>
-        </label>
-      )}
+        </div>
 
-      <label>
-        支払期限・引落日:
-        <input
-          type="date"
-          name="payment_date"
-          value={formData.payment_date}
-          onChange={handleChange}
-        />
-      </label>
-      <label>
-        金額:
-        <input
-          type="number"
-          name="amount"
-          value={formData.amount}
-          onChange={handleChange}
-          required
-        />
-      </label>
-      <label>
-        説明:
-        <input
-          type="text"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-        />
-      </label>
-      <label>
-        メモ:
-        <input
-          type="text"
-          name="note"
-          value={formData.note}
-          onChange={handleChange}
-        />
-      </label>
+        <div className="col-12 col-md-1">
+          <label className="form-label">郵便種別:</label>
+          <select
+            name="type"
+            value={formData.type}
+            onChange={handleChange}
+            className="form-select"
+            required
+          >
+            <option value="">選択可</option>
+            <option value="引落">引落</option>
+            <option value="振込">振込</option>
+            <option value="通知">通知</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
 
-      <button type="submit">送信</button>
+        <div className="col-12 col-md-1">
+          {(formData.type === '振込' || formData.type === '引落' || formData.type === 'カードの請求書') && (
+            <>
+              <label className="form-label">振込・引落口座:</label>
+              <select
+                name="bank_account_id"
+                value={formData.bank_account_id}
+                onChange={handleChange}
+                className="form-select"
+                required
+              >
+                <option value="">選択可</option>
+                {bankAccounts.map(account => (
+                  <option key={account.id} value={account.id}>{account.name}</option>
+                ))}
+              </select>
+            </>
+          )}
+        </div>
+
+        <div className="col-12 col-md-1">
+          <label className="form-label">期限日:</label>
+          <input
+            type="date"
+            name="payment_date"
+            value={formData.payment_date}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        <div className="col-12 col-md-2">
+          <label className="form-label">金額:</label>
+          <input
+            type="number"
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            className="form-control"
+            required
+          />
+        </div>
+
+        <div className="col-12 col-md-2">
+          <label className="form-label">説明:</label>
+          <input
+            type="text"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        <div className="col-12 col-md-6">
+          <label className="form-label">メモ:</label>
+          <input
+            type="text"
+            name="note"
+            value={formData.note}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        <div className="col-12">
+          <button type="submit" className="btn btn-primary">送信</button>
+        </div>
+      </div>
     </form>
   );
 };

@@ -11,9 +11,11 @@ const {
   getWithdrawalList,
   getNoticeList,
   getOtherList,
-  getTransferListByMonth
-} = mailController;  // 必要なメソッドを個別にインポート
-
+  getTransferListByMonth,
+  getWithdrawalListByMonth, // ✅ 追加
+  updateMail,
+  deleteMail
+} = mailController;
 
 // 郵便物を新規登録
 router.post("/", createMail);
@@ -34,11 +36,15 @@ router.get("/notices", getNoticeList);
 router.get("/others", getOtherList);
 
 // 郵便物修正エンドポイント
-router.put('/:id', mailController.updateMail);
+router.put('/:id', updateMail);
 
 // 削除エンドポイント（DELETE）
-router.delete('/:id', mailController.deleteMail);
+router.delete('/:id', deleteMail);
 
-router.get('/:month', getTransferListByMonth);
+// ✅ ストアドプロシージャ版 振込一覧（指定月）
+router.get('/transfer-list/:month', getTransferListByMonth);
+
+// ✅ ストアドプロシージャ版 引落一覧（指定月）
+router.get('/withdrawal-list/:month', getWithdrawalListByMonth); // ←追加！
 
 module.exports = router;

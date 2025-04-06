@@ -1,4 +1,5 @@
 import './App.css'; 
+import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useState, useEffect } from 'react';
 import MailForm from './components/MailForm';
 import MailListTransfers from './components/MailListTransfers';
@@ -7,6 +8,8 @@ import MailListNotices from './components/MailListNotices';
 import MailListOthers from './components/MailListOthers';
 import ClientMaster from './components/ClientMaster'; // ← 取引先マスタ
 import CompanyMaster from './components/CompanyMaster'; // ← 自社マスタ
+import { format } from 'date-fns';
+
 
 const App = () => {
   const [selectedTab, setSelectedTab] = useState('mail'); // 'mail' | 'client' | 'company'
@@ -62,11 +65,11 @@ const App = () => {
     const today = new Date();
     setMonthAndDates(today.getFullYear(), today.getMonth() + 1);
   };
+  
 
   return (
     <div className="App">
       <h1>郵便物管理システム</h1>
-
       {/* タブ切り替え */}
       <div style={{ marginBottom: '20px' }}>
         <button onClick={() => setSelectedTab('mail')}>郵便物</button>

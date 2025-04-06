@@ -2,7 +2,7 @@ const { Sequelize } = require("sequelize");
 const sequelize = require("../config/database");
 const Mail = require("../models/Mail"); 
 const Client = require('../models/Client');
-const BankAccount = require('../models/BankAccount');
+
 
 // 📌 日付を適切なフォーマットに変換する関数
 const formatDateTime = (dateStr) => {
@@ -81,8 +81,7 @@ exports.getMails = async (req, res) => {
   try {
     const mails = await Mail.findAll({
       include: [
-        { model: Client },
-        { model: BankAccount }
+        { model: Client }
       ],
       order: [['received_at', 'DESC']]
     });
@@ -93,7 +92,6 @@ exports.getMails = async (req, res) => {
 };
 
 
-// 振込一覧取得（日付範囲指定バージョン）
 exports.getTransferList = async (req, res) => {
   const { startDate, endDate } = req.query;
 
@@ -109,12 +107,11 @@ exports.getTransferList = async (req, res) => {
         m.type,
         c.name AS client_name,
         m.amount,
-        b.name AS bank_account_name,
+        (c.bank_name + '（' + c.bank_account + '）') AS bank_account_name, -- ✅ 修正ポイント
         m.description,
         m.note
       FROM mails m
       LEFT JOIN client_master c ON m.client_id = c.id
-      LEFT JOIN bank_accounts b ON m.bank_account_id = b.id
       WHERE m.type = '振込'
         AND m.payment_date BETWEEN :startDate AND :endDate
       ORDER BY c.name ASC, m.payment_date`,
@@ -124,13 +121,10 @@ exports.getTransferList = async (req, res) => {
       }
     );
 
-    res.json(results);
+    res.status(200).json(results);
   } catch (err) {
-    console.error("❌ Error in getTransferList:", err);  // エラー詳細をログに出力
-    res.status(500).json({
-      error: '一覧取得失敗',
-      detail: err.message,  // 詳細なエラーメッセージをクライアントに返す
-    });
+    console.error("❌ Error in getTransferList:", err);
+    res.status(500).json({ error: '一覧取得失敗', detail: err.message });
   }
 };
 
@@ -139,7 +133,7 @@ exports.getTransferList = async (req, res) => {
 exports.getWithdrawalList = async (req, res) => {
   const { startDate, endDate } = req.query;
 
-  // startDate または endDate がない場合は 400 Bad Request
+  // 🔍 バリデーション: startDate または endDate がない場合は 400
   if (!startDate || !endDate) {
     return res.status(400).json({ error: 'startDate と endDate は必須です' });
   }
@@ -147,17 +141,17 @@ exports.getWithdrawalList = async (req, res) => {
   try {
     const results = await sequelize.query(
       `SELECT
-        m.id,                    -- IDを追加
-        m.payment_date,
-        m.type,
-        c.name AS client_name,
-        m.amount,
-        b.name AS bank_account_name,
-        m.description,
-        m.note
+        m.id,                                        -- 郵便物ID
+        m.payment_date,                              -- 支払日
+        m.type,                                      -- 種別（引落）
+        c.name AS client_name,                       -- 取引先名
+        m.amount,                                    -- 金額
+        (b.bank_name + '（' + b.bank_account + '）') AS bank_account_name,  -- 会社口座名（自社）
+        m.description,                               -- 説明
+        m.note                                       -- メモ
       FROM mails m
-      LEFT JOIN client_master c ON m.client_id = c.id
-      LEFT JOIN bank_accounts b ON m.bank_account_id = b.id
+      LEFT JOIN client_master c ON m.client_id = c.id           -- 取引先情報
+      LEFT JOIN company_master b ON m.bank_account_id = b.id    -- 自社口座情報
       WHERE m.type = '引落'
         AND m.payment_date BETWEEN :startDate AND :endDate
       ORDER BY c.name ASC, m.payment_date`,
@@ -167,13 +161,18 @@ exports.getWithdrawalList = async (req, res) => {
       }
     );
 
-    // 結果を返す
+    // ✅ 正常レスポンス返却
     res.json(results);
   } catch (err) {
+    // ❌ エラー処理
     console.error('引落一覧取得失敗:', err);
-    res.status(500).json({ error: '引落一覧取得失敗', detail: err.message });
+    res.status(500).json({
+      error: '引落一覧取得失敗',
+      detail: err.message,
+    });
   }
 };
+
 
 // 通知一覧取得（日付範囲指定）
 exports.getNoticeList = async (req, res) => {
@@ -332,23 +331,59 @@ exports.deleteMail = async (req, res) => {
   }
 };
 
+// 📁 src/controllers/mailsController.js に追加
 exports.getTransferListByMonth = async (req, res) => {
   const { month } = req.params;
+  try {
+    const results = await sequelize.query(
+      'EXEC sp_GetTransferListByMonth @TargetMonth = :month',
+      {
+        replacements: { month },
+        type: sequelize.QueryTypes.SELECT
+      }
+    );
+    res.json(results);
+  } catch (err) {
+    console.error('ストアド実行エラー:', err);
+    res.status(500).json({ error: '一覧取得失敗', details: err.message });
+  }
+};
+
+// 引落一覧（月指定）取得（ストアド実行）
+exports.getWithdrawalListByMonth = async (req, res) => {
+  const { month } = req.params; // 形式：'2025-04'
+
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    return res.status(400).json({ error: '不正な月の形式です（例: 2025-04）' });
+  }
 
   try {
-    const result = await sequelize.query(
-      'EXEC GetTransferListByMonth :month',
+    const resultSets = await sequelize.query(
+      `EXEC GetWithdrawalListByMonth @Month = :month`,
       {
         replacements: { month },
         type: sequelize.QueryTypes.SELECT,
+        raw: true,
+        nest: true,
       }
     );
-    res.status(200).json(result);
+
+    // Sequelize で複数結果セットを扱うには特殊な扱いが必要（MSSQL特有）
+    // Sequelize v6 では1つの配列に結合されることがあるため、フィルタで明細とサマリを分ける
+    const data = Array.isArray(resultSets) ? resultSets : [];
+
+    // 明細とサマリの区別（amountがあるものが明細、ないものがサマリ）
+    const transfers = data.filter(row => row.amount !== undefined);
+    const summary = data.find(row => row.件数 !== undefined) || { 件数: 0, 合計金額: 0 };
+
+    res.json({ transfers, summary });
   } catch (err) {
-    console.error('ストアド実行エラー:', err);
-    res.status(500).json({ error: '振込一覧の取得に失敗しました。' });
+    console.error('❌ 引落一覧取得失敗（ストアド）:', err);
+    res.status(500).json({ error: '引落一覧の取得に失敗しました', details: err.message });
   }
 };
+
+
 
 
 

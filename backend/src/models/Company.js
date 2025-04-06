@@ -2,9 +2,10 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Company = sequelize.define('Company', {
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
   },
   bank_name: {
     type: DataTypes.STRING,
@@ -15,18 +16,18 @@ const Company = sequelize.define('Company', {
     allowNull: true,
   },
   created_at: {
-    type: DataTypes.STRING, // datetime ではなく文字列として受け取る
+    type: DataTypes.DATE,
     allowNull: true,
-    defaultValue: null,
+    defaultValue: DataTypes.NOW,
   },
   updated_at: {
-    type: DataTypes.STRING,
+    type: DataTypes.DATE,
     allowNull: true,
-    defaultValue: null,
+    defaultValue: DataTypes.NOW,
   },
 }, {
   tableName: 'company_master',
-  timestamps: false, // Sequelizeの自動タイムスタンプ機能は使わない
+  timestamps: false, // Sequelizeの自動生成を使わず、自分で管理
 });
 
 module.exports = Company;

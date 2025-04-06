@@ -7,16 +7,16 @@ const {
   deleteCompany,
 } = require('../controllers/companyController');
 
-// 会社一覧を取得 (GET /companies)
+// ✅ 自社マスタ一覧を取得（GET /company-master）
 router.get('/', getCompanies);
 
-// 新規会社を登録 (POST /companies)
+// ✅ 新規自社口座を登録（POST /company-master）
 router.post('/', createCompany);
 
-// 会社情報を更新 (PUT /companies/:id)
+// ✅ 自社口座情報を更新（PUT /company-master/:id）
 router.put('/:id', updateCompany);
 
-// 会社情報を削除 (DELETE /companies/:id)
+// ✅ 自社口座を削除（DELETE /company-master/:id）
 router.delete('/:id', deleteCompany);
 
 module.exports = router;

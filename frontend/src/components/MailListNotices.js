@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { format } from 'date-fns';
+
 
 const MailListNotices = ({ month, startDate, endDate }) => {
   const [notices, setNotices] = useState([]);
@@ -129,7 +131,7 @@ const MailListNotices = ({ month, startDate, endDate }) => {
         <tbody>
           {notices.map((item, index) => (
             <tr key={index}>
-              <td>{item.received_at || '---'}</td>
+             <td>{item.received_at ? format(new Date(item.received_at), 'MM/dd') : '---'}</td>
               <td>{item.client_name}</td>
               <td>{item.description}</td>
               <td>{item.note}</td>

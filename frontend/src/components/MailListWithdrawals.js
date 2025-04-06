@@ -1,73 +1,83 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { format } from 'date-fns';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import WithdrawalsDocument from './WithdrawalsDocument'; // ← PDF帳票
 
 const MailListWithdrawals = ({ startDate, endDate }) => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editWithdrawal, setEditWithdrawal] = useState(null);  // 修正対象の振込情報
+  const [editWithdrawal, setEditWithdrawal] = useState(null);
 
+  // データ取得
   useEffect(() => {
     if (!startDate || !endDate) return;
 
     setLoading(true);
     axios.get('http://localhost:5000/mails/withdrawals', {
-      params: { startDate, endDate }
+      params: { startDate, endDate },
     })
-      .then(res => {
+      .then((res) => {
         setWithdrawals(res.data);
         setLoading(false);
       })
-      .catch(err => {
-        console.error("引落一覧の取得失敗:", err);
+      .catch((err) => {
+        console.error('引落一覧の取得失敗:', err);
         setLoading(false);
       });
-  }, [startDate, endDate]); // ← 範囲が変わるたびに再取得
+  }, [startDate, endDate]);
 
-    // 修正ボタンを押したときの処理
-    const handleEdit = (id) => {
-      const withdrawalToEdit = withdrawals.find(item => item.id === id);
-      setEditWithdrawal(withdrawalToEdit);  // 編集対象の振込情報を設定
-    };
-  
-    // 振込修正処理
-    const handleSave = () => {
-      if (!editWithdrawal || !editWithdrawal.id) {
-        console.error('振込IDが存在しません');
-        return;
-      }
-  
-      axios.put(`http://localhost:5000/mails/${editWithdrawal.id}`, editWithdrawal)
-        .then(response => {
-          console.log("振込が更新されました:", response.data);
-          setWithdrawals(withdrawals.map(item => item.id === editWithdrawal.id ? editWithdrawal : item));
-          setEditWithdrawal(null);  // 編集モードを終了
-        })
-        .catch(error => console.error('更新に失敗:', error));
-    };
-    
+  const handleEdit = (id) => {
+    const target = withdrawals.find((item) => item.id === id);
+    setEditWithdrawal(target);
+  };
+
+  const handleSave = () => {
+    if (!editWithdrawal?.id) return;
+
+    axios.put(`http://localhost:5000/mails/${editWithdrawal.id}`, editWithdrawal)
+      .then(() => {
+        setWithdrawals(withdrawals.map((item) =>
+          item.id === editWithdrawal.id ? editWithdrawal : item
+        ));
+        setEditWithdrawal(null);
+      })
+      .catch((error) => console.error('更新に失敗:', error));
+  };
+
   const handleDelete = (id) => {
-    console.log("削除対象ID:", id);  // idが正しく渡っているか確認
-
-    if (!id) {
-      console.error("IDが渡されていません。削除できません。");
-      return;
-    }
+    if (!id) return;
 
     axios.delete(`http://localhost:5000/mails/${id}`)
-      .then(response => {
-        console.log("郵便物が削除されました:", response.data);
-        setWithdrawals(withdrawals.filter(item => item.id !== id)); // リストから削除
+      .then(() => {
+        const updated = withdrawals.filter((item) => item.id !== id);
+        setWithdrawals(updated);
       })
-      .catch(error => console.error('削除に失敗:', error));
+      .catch((error) => console.error('削除に失敗:', error));
   };
 
   if (loading) return <p>読み込み中...</p>;
+
+  const month = startDate?.slice(0, 7) || '';
 
   return (
     <div>
       <h2>引落一覧（{withdrawals.length}件）</h2>
 
-      {/* 振込修正フォーム */}
+{/* ✅ PDFダウンロードボタン（右寄せ） */}
+{withdrawals.length > 0 && (
+  <div style={{ marginBottom: '1rem', textAlign: 'right' }}>
+    <PDFDownloadLink
+      document={<WithdrawalsDocument withdrawals={withdrawals} month={month} />}
+      fileName={`引落一覧_${month}.pdf`}
+    >
+      {({ loading }) => (loading ? 'PDF生成中...' : 'PDFダウンロード')}
+    </PDFDownloadLink>
+  </div>
+)}
+
+
+      {/* ✅ 修正フォーム */}
       {editWithdrawal && (
         <div>
           <h3>振込修正</h3>
@@ -76,8 +86,10 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
               支払日:
               <input
                 type="date"
-                value={editWithdrawal.payment_date?.slice(0, 10)}
-                onChange={(e) => setEditWithdrawal({ ...editWithdrawal, payment_date: e.target.value })}
+                value={editWithdrawal.payment_date?.slice(0, 10) || ''}
+                onChange={(e) =>
+                  setEditWithdrawal({ ...editWithdrawal, payment_date: e.target.value })
+                }
               />
             </label>
             <label>
@@ -85,15 +97,19 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
               <input
                 type="text"
                 value={editWithdrawal.client_name || ''}
-                onChange={(e) => setEditWithdrawal({ ...editWithdrawal, client_name: e.target.value })}
+                onChange={(e) =>
+                  setEditWithdrawal({ ...editWithdrawal, client_name: e.target.value })
+                }
               />
             </label>
             <label>
               金額:
               <input
                 type="number"
-                value={editWithdrawal.amount}
-                onChange={(e) => setEditWithdrawal({ ...editWithdrawal, amount: e.target.value })}
+                value={editWithdrawal.amount || ''}
+                onChange={(e) =>
+                  setEditWithdrawal({ ...editWithdrawal, amount: e.target.value })
+                }
               />
             </label>
             <label>
@@ -101,7 +117,9 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
               <input
                 type="text"
                 value={editWithdrawal.bank_account_name || ''}
-                onChange={(e) => setEditWithdrawal({ ...editWithdrawal, bank_account_name: e.target.value })}
+                onChange={(e) =>
+                  setEditWithdrawal({ ...editWithdrawal, bank_account_name: e.target.value })
+                }
               />
             </label>
             <label>
@@ -109,7 +127,9 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
               <input
                 type="text"
                 value={editWithdrawal.description || ''}
-                onChange={(e) => setEditWithdrawal({ ...editWithdrawal, description: e.target.value })}
+                onChange={(e) =>
+                  setEditWithdrawal({ ...editWithdrawal, description: e.target.value })
+                }
               />
             </label>
             <label>
@@ -117,7 +137,9 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
               <input
                 type="text"
                 value={editWithdrawal.note || ''}
-                onChange={(e) => setEditWithdrawal({ ...editWithdrawal, note: e.target.value })}
+                onChange={(e) =>
+                  setEditWithdrawal({ ...editWithdrawal, note: e.target.value })
+                }
               />
             </label>
             <button type="button" onClick={handleSave}>保存</button>
@@ -125,7 +147,7 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
         </div>
       )}
 
-      {/* 引落一覧の表示 */}
+      {/* ✅ 引落一覧テーブル */}
       <table border="1">
         <thead>
           <tr>
@@ -142,18 +164,14 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
         <tbody>
           {withdrawals.map((item, index) => (
             <tr key={index}>
-              <td>{item.payment_date || '---'}</td>
-              <td>{item.client_name}</td>
-              <td>{item.amount}</td>
-              <td>{item.bank_account_name}</td>
-              <td>{item.description}</td>
-              <td>{item.note}</td>
-              <td>
-                <button onClick={() => handleEdit(item.id)}>修正</button>  {/* 修正ボタン */}
-              </td>
-              <td>
-                <button onClick={() => handleDelete(item.id)}>削除</button>  {/* 削除ボタン */}
-              </td>
+              <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '―'}</td>
+              <td>{item.client_name || '―'}</td>
+              <td>{item.amount?.toLocaleString() || 0}</td>
+              <td>{item.bank_account_name || `${item.bank_name || ''}（${item.bank_account || ''}）` || '―'}</td>
+              <td>{item.description || ''}</td>
+              <td>{item.note || ''}</td>
+              <td><button onClick={() => handleEdit(item.id)}>修正</button></td>
+              <td><button onClick={() => handleDelete(item.id)}>削除</button></td>
             </tr>
           ))}
         </tbody>

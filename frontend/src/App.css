@@ -114,3 +114,11 @@ input[type="date"] {
 input[type="date"]:focus {
   border-color: #616161;
 }
+
+.App {
+  text-align: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+

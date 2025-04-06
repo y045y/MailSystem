@@ -1,8 +1,9 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+
+// モデルの定義
 const Client = require('./Client');
 const Company = require('./Company');
-const BankAccount = require('./BankAccount');
 
 const Mail = sequelize.define('Mail', {
   id: {
@@ -14,14 +15,6 @@ const Mail = sequelize.define('Mail', {
     type: DataTypes.DATE,
     allowNull: false,
   },
-  client_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Client,
-      key: 'id',
-    },
-  },
   type: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -30,17 +23,13 @@ const Mail = sequelize.define('Mail', {
     type: DataTypes.DATEONLY,
     allowNull: true,
   },
-  bank_account_id: {
-    type: DataTypes.INTEGER,
+  bank_account: {
+    type: DataTypes.STRING,
     allowNull: true,
-    references: {
-      model: Company,
-      key: 'id',
-    },
   },
   amount: {
     type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
+    allowNull: true,
   },
   description: {
     type: DataTypes.STRING,
@@ -53,20 +42,36 @@ const Mail = sequelize.define('Mail', {
   status: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: "未処理",
+    defaultValue: '未処理',
   },
-  created_at: {  // 修正: created_at を明示的に追加
+  created_at: {
     type: DataTypes.DATE,
-    allowNull: false,
+    allowNull: true,
     defaultValue: DataTypes.NOW,
-  }
+  },
+  client_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: Client,
+      key: 'id',
+    },
+  },
+  bank_account_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: Company,
+      key: 'id',
+    },
+  },
 }, {
   tableName: 'mails',
-  timestamps: false, // `created_at` は手動で定義
+  timestamps: false,
 });
 
-// 関連付け
-Mail.belongsTo(Client, { foreignKey: 'client_id' });
-Mail.belongsTo(BankAccount, { foreignKey: 'bank_account_id' });
+// リレーションの定義
+Mail.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+Mail.belongsTo(Company, { foreignKey: 'bank_account_id', as: 'company_account' });
 
 module.exports = Mail;
