@@ -10,7 +10,8 @@ const ClientMaster = () => {
     name: '',
     bank_name: '',
     bank_account: '',
-    withdrawal_company_id: '',
+    withdrawal_company_id: null,
+
   };
 
   const [form, setForm] = useState(initialForm);
@@ -52,10 +53,12 @@ const ClientMaster = () => {
 
   const getFormData = (source) => ({
     ...source,
-    withdrawal_company_id: source.withdrawal_company_id
-      ? Number(source.withdrawal_company_id)
-      : null,
+    withdrawal_company_id:
+      source.withdrawal_company_id === '' || source.withdrawal_company_id === null
+        ? null
+        : Number(source.withdrawal_company_id),
   });
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -139,8 +142,8 @@ const ClientMaster = () => {
             name="withdrawal_company_id"
             value={
               (editClient
-                ? editClient.withdrawal_company_id?.toString()
-                : form.withdrawal_company_id?.toString()) || ''
+                ? editClient.withdrawal_company_id
+                : form.withdrawal_company_id) ?? ''
             }
             onChange={handleChange}
             className="form-select"
@@ -152,6 +155,7 @@ const ClientMaster = () => {
               </option>
             ))}
           </select>
+
         </div>
         <div className="col-auto">
           <button type="submit" className="btn btn-secondary">

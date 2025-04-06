@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import MyDocument from './MyDocument';
+import TransfersDocument from './TransfersDocument'; // ✅ ファイル名と一致させる
 import { format } from 'date-fns';
 import SummaryDocument from './SummaryDocument';
 
@@ -193,7 +193,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         {pdfData.length > 0 && !summaryLoading ? (
           <>
             <PDFDownloadLink
-              document={<MyDocument transfers={pdfData} month={month} />}
+              document={<TransfersDocument transfers={pdfData} month={month} />}
               fileName={`振込一覧_${month}.pdf`}
             >
               {({ loading }) =>

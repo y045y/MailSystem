@@ -81,18 +81,30 @@ const Table = ({ data }) => (
       <View style={styles.row}>
         <Text style={[styles.cell, styles.cellDate]}>---</Text>
         <Text style={[styles.cell, styles.cellClient]}>データが存在しません</Text>
-        <Text style={[styles.cell, styles.cellAmount]}></Text>
-        <Text style={[styles.cell, styles.cellAccount]}></Text>
-        <Text style={[styles.cell, styles.cellNote]}></Text>
+        <Text style={[styles.cell, styles.cellAmount]}>―</Text>
+        <Text style={[styles.cell, styles.cellAccount]}>―</Text>
+        <Text style={[styles.cell, styles.cellNote]}>―</Text>
       </View>
     ) : (
       data.map((item, idx) => (
         <View style={styles.row} key={idx} wrap={false}>
-          <Text style={[styles.cell, styles.cellDate]}>{formatDate(item.payment_date)}</Text>
-          <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
-          <Text style={[styles.cell, styles.cellAmount]}>{Number(item.amount).toLocaleString()}</Text>
-          <Text style={[styles.cell, styles.cellAccount]}>{item.bank_account_name || '―'}</Text>
-          <Text style={[styles.cell, styles.cellNote]}>{[item.description, item.note].filter(Boolean).join(' / ')}</Text>
+          <Text style={[styles.cell, styles.cellDate]}>
+            {formatDate(item.payment_date)}
+          </Text>
+          <Text style={[styles.cell, styles.cellClient]}>
+            {item.client_name || '―'}
+          </Text>
+          <Text style={[styles.cell, styles.cellAmount]}>
+            {Number(item.amount || 0).toLocaleString()}
+          </Text>
+          <Text style={[styles.cell, styles.cellAccount]}>
+            {item.bank_account_name || '―'}
+          </Text>
+          <Text style={[styles.cell, styles.cellNote]}>
+            {item.description || item.note
+              ? [item.description, item.note].filter(Boolean).join(' / ')
+              : '―'}
+          </Text>
         </View>
       ))
     )}
@@ -121,9 +133,8 @@ const SummaryDocument = ({ transfers = [], withdrawals = [], summary = {}, month
 
         <Text style={styles.sectionTitle}>■ 総合計</Text>
         <Text style={styles.summary}>
-  総件数: {summary.total_count || 0} 件　総合計金額: {Number(summary.total_amount || 0).toLocaleString()} 円
-</Text>
-
+          総件数: {summary.total_count ?? 0} 件　総合計金額: {Number(summary.total_amount ?? 0).toLocaleString()} 円
+        </Text>
       </Page>
     </Document>
   );

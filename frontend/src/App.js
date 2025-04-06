@@ -8,7 +8,7 @@ import MailListNotices from './components/MailListNotices';
 import MailListOthers from './components/MailListOthers';
 import ClientMaster from './components/ClientMaster'; // ← 取引先マスタ
 import CompanyMaster from './components/CompanyMaster'; // ← 自社マスタ
-import { format } from 'date-fns';
+// import { format } from 'date-fns';
 
 
 const App = () => {
