@@ -12,9 +12,11 @@ const {
   getNoticeList,
   getOtherList,
   getTransferListByMonth,
-  getWithdrawalListByMonth, // ✅ 追加
+  getWithdrawalListByMonth, 
+  getTransferAndWithdrawalSummary, 
   updateMail,
-  deleteMail
+  deleteMail,
+  
 } = mailController;
 
 // 郵便物を新規登録
@@ -46,5 +48,8 @@ router.get('/transfer-list/:month', getTransferListByMonth);
 
 // ✅ ストアドプロシージャ版 引落一覧（指定月）
 router.get('/withdrawal-list/:month', getWithdrawalListByMonth); // ←追加！
+
+// 📌 振込＋引落＋合計情報（PDF出力用）
+router.get('/transfer-withdrawal-summary', getTransferAndWithdrawalSummary);
 
 module.exports = router;

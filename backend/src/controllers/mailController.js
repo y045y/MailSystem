@@ -384,6 +384,56 @@ exports.getWithdrawalListByMonth = async (req, res) => {
 };
 
 
+// 📌 振込 + 引落 + 合計取得API（ストアド実行版）
+exports.getTransferAndWithdrawalSummary = async (req, res) => {
+  const { startDate, endDate } = req.query;
+
+  // バリデーションチェック
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'startDateとendDateは必須です' });
+  }
+
+  try {
+    const resultSets = await sequelize.query(
+      `EXEC GetTransfersAndWithdrawals @StartDate = :startDate, @EndDate = :endDate`,
+      {
+        replacements: { startDate, endDate },
+        type: sequelize.QueryTypes.SELECT,
+        raw: true,
+        nest: true,
+      }
+    );
+
+    // 👉 結果セットの分類処理
+    const transfers = resultSets.filter(r => r.type === '振込');
+    const withdrawals = resultSets.filter(r => r.type === '引落');
+    const summary = resultSets.find(r => r.label === 'summary') || {
+      label: 'summary',
+      transfer_count: 0,
+      transfer_total: 0,
+      withdrawal_count: 0,
+      withdrawal_total: 0,
+      total_count: 0,
+      total_amount: 0,
+    };
+
+    // ✅ レスポンス返却
+    res.status(200).json({
+      transfers,
+      withdrawals,
+      summary
+    });
+
+  } catch (err) {
+    console.error('❌ ストアド実行失敗:', err);
+    res.status(500).json({
+      error: '振込・引落・集計情報の取得に失敗しました',
+      detail: err.message
+    });
+  }
+};
+
+
 
 
 
