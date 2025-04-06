@@ -55,7 +55,10 @@ exports.createClient = async (req, res) => {
       name,
       bank_name: bank_name || null,
       bank_account: bank_account || null,
-      withdrawal_company_id: withdrawal_company_id !== '' ? Number(withdrawal_company_id) : null,
+      withdrawal_company_id:
+        withdrawal_company_id && Number(withdrawal_company_id) > 0
+          ? Number(withdrawal_company_id)
+          : null,
     });
 
     res.status(201).json(newClient);
@@ -64,6 +67,7 @@ exports.createClient = async (req, res) => {
     res.status(500).json({ error: '取引先の登録に失敗しました', details: err.message });
   }
 };
+
 
 
 // ✅ 取引先更新（PUT /clients/:id）
