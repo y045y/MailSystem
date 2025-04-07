@@ -152,43 +152,8 @@ const MailForm = ({ onReload }) => {
         <option value="その他">その他</option>
       </select>
     </div>
-
-    <div className="col-6 col-md-2">
-      <label className="form-label">期限日:</label>
-      <input
-        type="date"
-        name="payment_date"
-        value={formData.payment_date}
-        onChange={handleChange}
-        className="form-control"
-      />
-    </div>
-
-    <div className="col-6 col-md-2">
-      <label className="form-label">金額:</label>
-      <input
-        type="number"
-        name="amount"
-        value={formData.amount}
-        onChange={handleChange}
-        className="form-control"
-        required
-      />
-    </div>
-
-    <div className="col-6 col-md-2">
-      <label className="form-label">説明:</label>
-      <input
-        type="text"
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        className="form-control"
-      />
-    </div>
-
     { (formData.type === '振込' || formData.type === '引落' || formData.type === 'カードの請求書') && (
-      <div className="col-12 col-md-4">
+      <div className="col-12 col-md-2">
         <label className="form-label">振込・引落口座:</label>
         <select
           name="bank_account_id"
@@ -204,6 +169,42 @@ const MailForm = ({ onReload }) => {
         </select>
       </div>
     )}
+
+    <div className="col-6 col-md-2">
+      <label className="form-label">期限日:</label>
+      <input
+        type="date"
+        name="payment_date"
+        value={formData.payment_date}
+        onChange={handleChange}
+        className="form-control"
+      />
+    </div>
+    <div className="col-6 col-md-2">
+  <label className="form-label">金額:</label>
+  <input
+    type="number"
+    name="amount"
+    value={formData.amount}
+    onChange={handleChange}
+    className="form-control"
+    required={formData.type === '振込' || formData.type === '引落' || formData.type === 'カードの請求書'}
+  />
+</div>
+
+
+    <div className="col-6 col-md-2">
+      <label className="form-label">説明:</label>
+      <input
+        type="text"
+        name="description"
+        value={formData.description}
+        onChange={handleChange}
+        className="form-control"
+      />
+    </div>
+
+
 
   {/* メモ欄と送信ボタンの並び */}
   <div className="col-12 col-md-4">

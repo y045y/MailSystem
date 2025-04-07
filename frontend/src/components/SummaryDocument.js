@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
   cellDate: { width: '8%' },
   cellClient: { width: '18%' },
   cellAmount: { width: '8%', textAlign: 'right' },
-  cellAccount: { width: '36%' },
-  cellNote: { width: '30%' },
+  cellAccount: { width: '41%' },
+  cellNote: { width: '25%' },
   summary: {
     marginTop: 12,
     textAlign: 'right',
