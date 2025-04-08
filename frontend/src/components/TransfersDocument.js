@@ -15,7 +15,7 @@ const formatDate = (iso) => {
   return isNaN(date.getTime()) ? '---' : `${date.getMonth() + 1}/${date.getDate()}`;
 };
 
-// ✅ 月ラベル（2025-04 → 4月分）
+// ✅ 月ラベル（例：2025-04 → 4月分）
 const formatMonthLabel = (monthStr) => {
   if (!monthStr) return '';
   const [, m] = monthStr.split('-');
@@ -56,11 +56,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     padding: 4,
   },
+  cellReceived: { width: '7%' },  // ✅ 追加
   cellDate: { width: '7%' },
   cellClient: { width: '20%' },
-  cellAmount: { width: '10%', textAlign: 'right' },
-  cellAccount: { width: '31%' },
-  cellNote: { width: '32%' },
+  cellAmount: { width: '9%', textAlign: 'right' },
+  cellAccount: { width: '33%' },  // ← 幅を調整（合計100%に）
+  cellNote: { width: '24%' },
   summary: {
     marginTop: 12,
     textAlign: 'right',
@@ -68,7 +69,6 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ PDFドキュメント本体
 const TransfersDocument = ({ transfers = [], month }) => {
   const safeTransfers = Array.isArray(transfers)
     ? transfers.filter(item =>
@@ -93,6 +93,7 @@ const TransfersDocument = ({ transfers = [], month }) => {
         <View style={styles.table}>
           {/* ヘッダー */}
           <View style={[styles.row, styles.header]}>
+            <Text style={[styles.cell, styles.cellReceived]}>受取日</Text> {/* ✅ 追加 */}
             <Text style={[styles.cell, styles.cellDate]}>支払日</Text>
             <Text style={[styles.cell, styles.cellClient]}>取引先</Text>
             <Text style={[styles.cell, styles.cellAmount]}>金額</Text>
@@ -103,6 +104,7 @@ const TransfersDocument = ({ transfers = [], month }) => {
           {/* 明細行 */}
           {safeTransfers.length === 0 ? (
             <View style={styles.row}>
+              <Text style={[styles.cell, styles.cellReceived]}>---</Text>
               <Text style={[styles.cell, styles.cellDate]}>---</Text>
               <Text style={[styles.cell, styles.cellClient]}>データが存在しません</Text>
               <Text style={[styles.cell, styles.cellAmount]}></Text>
@@ -112,6 +114,9 @@ const TransfersDocument = ({ transfers = [], month }) => {
           ) : (
             safeTransfers.map((item, idx) => (
               <View style={styles.row} key={idx} wrap={false}>
+                <Text style={[styles.cell, styles.cellReceived]}>
+                  {formatDate(item.received_at)}
+                </Text>
                 <Text style={[styles.cell, styles.cellDate]}>
                   {formatDate(item.payment_date)}
                 </Text>

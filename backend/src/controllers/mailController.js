@@ -92,42 +92,56 @@ exports.getMails = async (req, res) => {
 };
 
 
+// 振込一覧取得API
 exports.getTransferList = async (req, res) => {
   const { startDate, endDate } = req.query;
 
+  // クエリパラメータがない場合は400エラー
   if (!startDate || !endDate) {
     return res.status(400).json({ error: 'startDate と endDate は必須です' });
   }
 
   try {
+    // 生SQLを使用して振込データを取得
     const results = await sequelize.query(
-      `SELECT
+      `
+      SELECT
         m.id,
+        m.received_at,  -- ✅ 受取日も取得（画面でソートに使う）
         m.payment_date,
         m.type,
         c.name AS client_name,
         m.amount,
-        (c.bank_name + '（' + c.bank_account + '）') AS bank_account_name, -- ✅ 修正ポイント
+        -- 口座情報を1列にまとめて表示
+        (c.bank_name + '（' + c.bank_account + '）') AS bank_account_name,
         m.description,
         m.note
       FROM mails m
       LEFT JOIN client_master c ON m.client_id = c.id
       WHERE m.type = '振込'
         AND m.payment_date BETWEEN :startDate AND :endDate
-      ORDER BY c.name ASC, m.payment_date`,
+      ORDER BY m.received_at, c.name ASC, m.payment_date
+      `,
       {
-        replacements: { startDate, endDate },
+        replacements: {
+          startDate,
+          endDate,
+        },
         type: sequelize.QueryTypes.SELECT,
       }
     );
 
+    // 成功時：JSONで返却
     res.status(200).json(results);
   } catch (err) {
+    // エラー時：ログ出力 & 500エラー返却
     console.error("❌ Error in getTransferList:", err);
-    res.status(500).json({ error: '一覧取得失敗', detail: err.message });
+    res.status(500).json({
+      error: '一覧取得失敗',
+      detail: err.message,
+    });
   }
 };
-
 
 // 引落一覧取得（日付範囲指定対応）
 exports.getWithdrawalList = async (req, res) => {

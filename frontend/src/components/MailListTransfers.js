@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import TransfersDocument from './TransfersDocument'; // ✅ ファイル名と一致させる
+import TransfersDocument from './TransfersDocument';
 import { format } from 'date-fns';
 import SummaryDocument from './SummaryDocument';
 
@@ -20,7 +20,6 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
   useEffect(() => {
     if (!startDate || !endDate) return;
 
-    // 振込一覧取得
     setLoading(true);
     axios
       .get('http://localhost:5000/mails/transfers', {
@@ -44,7 +43,6 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         setLoading(false);
       });
 
-    // 振込＋引落＋合計 一括取得
     setSummaryLoading(true);
     axios
       .get('http://localhost:5000/mails/transfer-withdrawal-summary', {
@@ -223,6 +221,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       <table className="table table-bordered">
         <thead className="table-dark">
           <tr>
+            <th>受取日</th> {/* ✅ 追加 */}
             <th>支払日</th>
             <th>取引先</th>
             <th>金額</th>
@@ -236,7 +235,12 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         <tbody>
           {transfers.map((item, index) => (
             <tr key={item.id || index}>
-              <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '---'}</td>
+              <td>
+                {item.received_at ? format(new Date(item.received_at), 'M/dd') : '---'}
+              </td>
+              <td>
+                {item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '---'}
+              </td>
               <td>{item.client_name}</td>
               <td>{item.amount}</td>
               <td>{item.bank_account_name}</td>
