@@ -56,11 +56,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     padding: 4,
   },
-  cellReceived: { width: '7%' },  // ✅ 追加
+  cellReceived: { width: '7%' }, // ✅ 追加
   cellDate: { width: '7%' },
   cellClient: { width: '20%' },
   cellAmount: { width: '9%', textAlign: 'right' },
-  cellAccount: { width: '33%' },  // ← 幅を調整（合計100%に）
+  cellAccount: { width: '33%' }, // ← 幅を調整（合計100%に）
   cellNote: { width: '24%' },
   summary: {
     marginTop: 12,
@@ -71,11 +71,13 @@ const styles = StyleSheet.create({
 
 const TransfersDocument = ({ transfers = [], month }) => {
   const safeTransfers = Array.isArray(transfers)
-    ? transfers.filter(item =>
-        item &&
-        typeof item.payment_date === 'string' &&
-        !isNaN(new Date(item.payment_date).getTime()) &&
-        typeof item.amount !== 'undefined')
+    ? transfers.filter(
+        (item) =>
+          item &&
+          typeof item.payment_date === 'string' &&
+          !isNaN(new Date(item.payment_date).getTime()) &&
+          typeof item.amount !== 'undefined'
+      )
     : [];
 
   const total = safeTransfers.reduce((sum, t) => {
@@ -117,17 +119,15 @@ const TransfersDocument = ({ transfers = [], month }) => {
                 <Text style={[styles.cell, styles.cellReceived]}>
                   {formatDate(item.received_at)}
                 </Text>
-                <Text style={[styles.cell, styles.cellDate]}>
-                  {formatDate(item.payment_date)}
-                </Text>
-                <Text style={[styles.cell, styles.cellClient]}>
-                  {item.client_name || '―'}
-                </Text>
+                <Text style={[styles.cell, styles.cellDate]}>{formatDate(item.payment_date)}</Text>
+                <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
                 <Text style={[styles.cell, styles.cellAmount]}>
                   {Number(item.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </Text>
                 <Text style={[styles.cell, styles.cellAccount]}>
-                  {item.bank_account_name || `${item.bank_name || ''}（${item.bank_account || ''}）` || '―'}
+                  {item.bank_account_name ||
+                    `${item.bank_name || ''}（${item.bank_account || ''}）` ||
+                    '―'}
                 </Text>
                 <Text style={[styles.cell, styles.cellNote]}>
                   {[item.description, item.note].filter(Boolean).join(' / ')}
@@ -139,7 +139,8 @@ const TransfersDocument = ({ transfers = [], month }) => {
 
         {/* 件数・合計 */}
         <Text style={styles.summary}>
-          {safeTransfers.length} 件　合計: {total.toLocaleString(undefined, { maximumFractionDigits: 0 })} 円
+          {safeTransfers.length} 件　合計:{' '}
+          {total.toLocaleString(undefined, { maximumFractionDigits: 0 })} 円
         </Text>
       </Page>
     </Document>

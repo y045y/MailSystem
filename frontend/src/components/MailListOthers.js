@@ -12,15 +12,16 @@ const MailListOthers = ({ startDate, endDate }) => {
 
     setLoading(true);
 
-    axios.get('http://localhost:5000/mails/others', {
-      params: { startDate, endDate },
-    })
-      .then(res => {
+    axios
+      .get('http://localhost:5000/mails/others', {
+        params: { startDate, endDate },
+      })
+      .then((res) => {
         setOthers(res.data);
         setLoading(false);
       })
-      .catch(err => {
-        console.error("その他一覧の取得失敗:", err);
+      .catch((err) => {
+        console.error('その他一覧の取得失敗:', err);
         setLoading(false);
       });
   }, [startDate, endDate]);
@@ -35,27 +36,29 @@ const MailListOthers = ({ startDate, endDate }) => {
       return;
     }
 
-    axios.put(`http://localhost:5000/mails/${editItem.id}`, editItem)
-      .then(response => {
-        console.log("アイテムが更新されました:", response.data);
-        setOthers(others.map(item => item.id === editItem.id ? editItem : item));
+    axios
+      .put(`http://localhost:5000/mails/${editItem.id}`, editItem)
+      .then((response) => {
+        console.log('アイテムが更新されました:', response.data);
+        setOthers(others.map((item) => (item.id === editItem.id ? editItem : item)));
         setEditItem(null);
       })
-      .catch(error => console.error('更新に失敗:', error));
+      .catch((error) => console.error('更新に失敗:', error));
   };
 
   const handleDelete = (id) => {
     if (!id) {
-      console.error("IDが渡されていません。削除できません。");
+      console.error('IDが渡されていません。削除できません。');
       return;
     }
 
-    axios.delete(`http://localhost:5000/mails/${id}`)
-      .then(response => {
-        console.log("アイテムが削除されました:", response.data);
-        setOthers(others.filter(item => item.id !== id));
+    axios
+      .delete(`http://localhost:5000/mails/${id}`)
+      .then((response) => {
+        console.log('アイテムが削除されました:', response.data);
+        setOthers(others.filter((item) => item.id !== id));
       })
-      .catch(error => console.error('削除に失敗:', error));
+      .catch((error) => console.error('削除に失敗:', error));
   };
 
   if (loading) return <p>読み込み中...</p>;
@@ -100,7 +103,9 @@ const MailListOthers = ({ startDate, endDate }) => {
                 onChange={(e) => setEditItem({ ...editItem, note: e.target.value })}
               />
             </label>
-            <button type="button" onClick={handleSave}>保存</button>
+            <button type="button" onClick={handleSave}>
+              保存
+            </button>
           </form>
         </div>
       )}
@@ -124,18 +129,12 @@ const MailListOthers = ({ startDate, endDate }) => {
               <td>{item.description}</td>
               <td>{item.note}</td>
               <td>
-                <button
-                  onClick={() => handleEdit(item)}
-                  className="btn btn-secondary btn-sm"
-                >
+                <button onClick={() => handleEdit(item)} className="btn btn-secondary btn-sm">
                   修正
                 </button>
               </td>
               <td>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="btn btn-danger btn-sm"
-                >
+                <button onClick={() => handleDelete(item.id)} className="btn btn-danger btn-sm">
                   削除
                 </button>
               </td>

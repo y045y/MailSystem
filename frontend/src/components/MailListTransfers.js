@@ -37,9 +37,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         const filtered = Array.isArray(res.data)
           ? res.data.filter(
               (item) =>
-                item &&
-                typeof item.amount === 'number' &&
-                typeof item.payment_date === 'string'
+                item && typeof item.amount === 'number' && typeof item.payment_date === 'string'
             )
           : [];
         setTransfers(filtered);
@@ -113,9 +111,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <input
                 type="date"
                 value={editTransfer.payment_date?.slice(0, 10)}
-                onChange={(e) =>
-                  setEditTransfer({ ...editTransfer, payment_date: e.target.value })
-                }
+                onChange={(e) => setEditTransfer({ ...editTransfer, payment_date: e.target.value })}
               />
             </label>
 
@@ -126,9 +122,11 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
                 onChange={(e) => {
                   const clientId = parseInt(e.target.value, 10);
                   const client = clients.find((c) => c.id === clientId);
-                  const accountName = client?.withdrawal_company
-                    ? `${client.withdrawal_company.bank_name} ${client.withdrawal_company.bank_account}`
+
+                  const accountName = client
+                    ? `${client.bank_name || ''} ${client.bank_account || ''}`
                     : '';
+
                   setEditTransfer({
                     ...editTransfer,
                     client_id: clientId,
@@ -162,11 +160,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
 
             <label>
               口座（自動セット）:
-              <input
-                type="text"
-                value={editTransfer.bank_account_name || ''}
-                readOnly
-              />
+              <input type="text" value={editTransfer.bank_account_name || ''} readOnly />
             </label>
 
             <label>
@@ -174,9 +168,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <input
                 type="text"
                 value={editTransfer.description || ''}
-                onChange={(e) =>
-                  setEditTransfer({ ...editTransfer, description: e.target.value })
-                }
+                onChange={(e) => setEditTransfer({ ...editTransfer, description: e.target.value })}
               />
             </label>
 
@@ -185,14 +177,19 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <input
                 type="text"
                 value={editTransfer.note || ''}
-                onChange={(e) =>
-                  setEditTransfer({ ...editTransfer, note: e.target.value })
-                }
+                onChange={(e) => setEditTransfer({ ...editTransfer, note: e.target.value })}
               />
             </label>
 
             <button type="button" onClick={handleSave}>
               保存
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditTransfer(null)}
+              className="btn btn-secondary"
+            >
+              キャンセル
             </button>
           </form>
         </div>

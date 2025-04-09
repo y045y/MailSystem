@@ -70,11 +70,12 @@ const styles = StyleSheet.create({
 
 // ✅ PDFドキュメント本体
 const WithdrawalsDocument = ({ withdrawals = [], month }) => {
-  const safeWithdrawals = withdrawals.filter(item =>
-    item &&
-    typeof item.payment_date === 'string' &&
-    !isNaN(new Date(item.payment_date).getTime()) &&
-    typeof item.amount !== 'undefined'
+  const safeWithdrawals = withdrawals.filter(
+    (item) =>
+      item &&
+      typeof item.payment_date === 'string' &&
+      !isNaN(new Date(item.payment_date).getTime()) &&
+      typeof item.amount !== 'undefined'
   );
 
   const total = safeWithdrawals.reduce((sum, t) => {
@@ -111,17 +112,16 @@ const WithdrawalsDocument = ({ withdrawals = [], month }) => {
           ) : (
             safeWithdrawals.map((item, idx) => (
               <View style={styles.row} key={idx}>
-                <Text style={[styles.cell, styles.cellDate]}>
-                  {formatDate(item.payment_date)}
-                </Text>
-                <Text style={[styles.cell, styles.cellClient]}>
-                  {item.client_name || '―'}
-                </Text>
+                <Text style={[styles.cell, styles.cellDate]}>{formatDate(item.payment_date)}</Text>
+                <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
                 <Text style={[styles.cell, styles.cellAmount]}>
                   {Number(item.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </Text>
                 <Text style={[styles.cell, styles.cellAccount]}>
-                  {item.bank_account_name || (item.bank_name && item.bank_account ? `${item.bank_name}（${item.bank_account}）` : '―')}
+                  {item.bank_account_name ||
+                    (item.bank_name && item.bank_account
+                      ? `${item.bank_name}（${item.bank_account}）`
+                      : '―')}
                 </Text>
                 <Text style={[styles.cell, styles.cellNote]}>
                   {[item.description, item.note].filter(Boolean).join(' / ')}
@@ -133,7 +133,8 @@ const WithdrawalsDocument = ({ withdrawals = [], month }) => {
 
         {/* 件数・合計 */}
         <Text style={styles.summary}>
-          {safeWithdrawals.length} 件　合計: {total.toLocaleString(undefined, { maximumFractionDigits: 0 })} 円
+          {safeWithdrawals.length} 件　合計:{' '}
+          {total.toLocaleString(undefined, { maximumFractionDigits: 0 })} 円
         </Text>
       </Page>
     </Document>

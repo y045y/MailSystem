@@ -17,12 +17,33 @@ MailForm.css
     color: #495057;                /* 色を少し濃い目に */
   }
   
-  /* 入力フィールドのスタイル */
-  .mail-form .form-control,
-  .mail-form .form-select {
-    margin-bottom: 15px;           /* フィールド間のスペース */
-    border-radius: 4px;            /* 入力フィールドの角を丸く */
-  }
+/* ラベル用のスタイル：入力欄の左上に配置し、余白を最小限に */
+.mail-form .form-label {
+  display: block;           /* ラベルをブロック要素にして改行 */
+  margin-bottom: 4px;       /* 入力との間隔を縮める */
+  text-align: left;         /* 左寄せ */
+  font-weight: 500;         /* 適度な太さ */
+  font-size: 0.9rem;        /* フォントサイズの調整 */
+}
+
+/* 入力フィールド・セレクトボックスのスタイル */
+.mail-form .form-control,
+.mail-form .form-select {
+  height: 38px;             /* 統一の高さ */
+  padding: 6px 12px;        /* 上下に6px、左右に12pxのパディング */
+  margin-bottom: 15px;      /* 下のフィールドとの間隔 */
+  border-radius: 4px;       /* 角丸 */
+  box-sizing: border-box;   /* パディング込みで高さ計算 */
+}
+
+/* type="date" の入力も同様に調整（左右パディングを追加） */
+.mail-form input[type="date"] {
+  height: 38px;
+  padding: 6px 12px;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
   
   /* フォームの各行のスタイル */
   .mail-form .mb-3 {

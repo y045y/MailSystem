@@ -11,25 +11,26 @@ const MailListNotices = ({ month, startDate, endDate }) => {
     if (!month || !startDate || !endDate) return;
 
     setLoading(true);
-    axios.get(`http://localhost:5000/mails/notices`, {
-      params: {
-        month,
-        startDate,
-        endDate
-      }
-    })
-      .then(res => {
+    axios
+      .get(`http://localhost:5000/mails/notices`, {
+        params: {
+          month,
+          startDate,
+          endDate,
+        },
+      })
+      .then((res) => {
         setNotices(res.data);
         setLoading(false);
       })
-      .catch(err => {
-        console.error("通知一覧の取得失敗:", err);
+      .catch((err) => {
+        console.error('通知一覧の取得失敗:', err);
         setLoading(false);
       });
   }, [month, startDate, endDate]);
 
   const handleEdit = (id) => {
-    const noticeToEdit = notices.find(item => item.id === id);
+    const noticeToEdit = notices.find((item) => item.id === id);
     setEditNotice(noticeToEdit);
   };
 
@@ -39,27 +40,29 @@ const MailListNotices = ({ month, startDate, endDate }) => {
       return;
     }
 
-    axios.put(`http://localhost:5000/mails/${editNotice.id}`, editNotice)
-      .then(response => {
-        console.log("通知が更新されました:", response.data);
-        setNotices(notices.map(item => item.id === editNotice.id ? editNotice : item));
+    axios
+      .put(`http://localhost:5000/mails/${editNotice.id}`, editNotice)
+      .then((response) => {
+        console.log('通知が更新されました:', response.data);
+        setNotices(notices.map((item) => (item.id === editNotice.id ? editNotice : item)));
         setEditNotice(null);
       })
-      .catch(error => console.error('更新に失敗:', error));
+      .catch((error) => console.error('更新に失敗:', error));
   };
 
   const handleDelete = (id) => {
     if (!id) {
-      console.error("IDが渡されていません。削除できません。");
+      console.error('IDが渡されていません。削除できません。');
       return;
     }
 
-    axios.delete(`http://localhost:5000/mails/${id}`)
-      .then(response => {
-        console.log("通知が削除されました:", response.data);
-        setNotices(notices.filter(item => item.id !== id));
+    axios
+      .delete(`http://localhost:5000/mails/${id}`)
+      .then((response) => {
+        console.log('通知が削除されました:', response.data);
+        setNotices(notices.filter((item) => item.id !== id));
       })
-      .catch(error => console.error('削除に失敗:', error));
+      .catch((error) => console.error('削除に失敗:', error));
   };
 
   if (loading) return <p>読み込み中...</p>;
@@ -104,7 +107,9 @@ const MailListNotices = ({ month, startDate, endDate }) => {
                 onChange={(e) => setEditNotice({ ...editNotice, note: e.target.value })}
               />
             </label>
-            <button type="button" onClick={handleSave}>保存</button>
+            <button type="button" onClick={handleSave}>
+              保存
+            </button>
           </form>
         </div>
       )}
@@ -128,18 +133,12 @@ const MailListNotices = ({ month, startDate, endDate }) => {
               <td>{item.description}</td>
               <td>{item.note}</td>
               <td>
-                <button
-                  onClick={() => handleEdit(item.id)}
-                  className="btn btn-secondary btn-sm"
-                >
+                <button onClick={() => handleEdit(item.id)} className="btn btn-secondary btn-sm">
                   修正
                 </button>
               </td>
               <td>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="btn btn-danger btn-sm"
-                >
+                <button onClick={() => handleDelete(item.id)} className="btn btn-danger btn-sm">
                   削除
                 </button>
               </td>

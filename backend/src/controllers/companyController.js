@@ -6,7 +6,7 @@ const { Op } = require('sequelize');
 exports.getCompanies = async (req, res) => {
   try {
     const companies = await Company.findAll({
-      order: [['id', 'ASC']]
+      order: [['id', 'ASC']],
     });
     res.status(200).json(companies);
   } catch (error) {
@@ -28,7 +28,7 @@ exports.createCompany = async (req, res) => {
       bank_name,
       bank_account,
       created_at: new Date(), // ← これでOK。ISO文字列に変換しないこと。
-      updated_at: new Date()
+      updated_at: new Date(),
     });
 
     res.status(201).json(newCompany);
@@ -37,7 +37,6 @@ exports.createCompany = async (req, res) => {
     res.status(500).json({ error: 'Failed to create company', details: error.message });
   }
 };
-
 
 // ✅ 自社口座情報を更新 (PUT /company-master/:id)
 exports.updateCompany = async (req, res) => {
@@ -72,10 +71,7 @@ exports.deleteCompany = async (req, res) => {
     }
 
     // 🔁 関連するclient_masterの外部キーをnullにする
-    await Client.update(
-      { withdrawal_company_id: null },
-      { where: { withdrawal_company_id: id } }
-    );
+    await Client.update({ withdrawal_company_id: null }, { where: { withdrawal_company_id: id } });
 
     await company.destroy();
 
@@ -85,4 +81,3 @@ exports.deleteCompany = async (req, res) => {
     res.status(500).json({ error: 'Failed to delete company', details: error.message });
   }
 };
-

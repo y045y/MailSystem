@@ -91,21 +91,13 @@ const Table = ({ data }) => (
     ) : (
       data.map((item, idx) => (
         <View style={styles.row} key={idx} wrap={false}>
-          <Text style={[styles.cell, styles.cellReceived]}>
-            {formatDate(item.received_at)}
-          </Text>
-          <Text style={[styles.cell, styles.cellPayment]}>
-            {formatDate(item.payment_date)}
-          </Text>
-          <Text style={[styles.cell, styles.cellClient]}>
-            {item.client_name || '―'}
-          </Text>
+          <Text style={[styles.cell, styles.cellReceived]}>{formatDate(item.received_at)}</Text>
+          <Text style={[styles.cell, styles.cellPayment]}>{formatDate(item.payment_date)}</Text>
+          <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
           <Text style={[styles.cell, styles.cellAmount]}>
             {Number(item.amount || 0).toLocaleString()}
           </Text>
-          <Text style={[styles.cell, styles.cellAccount]}>
-            {item.bank_account_name || '―'}
-          </Text>
+          <Text style={[styles.cell, styles.cellAccount]}>{item.bank_account_name || '―'}</Text>
           <Text style={[styles.cell, styles.cellNote]}>
             {item.description || item.note
               ? [item.description, item.note].filter(Boolean).join(' / ')
@@ -128,18 +120,21 @@ const SummaryDocument = ({ transfers = [], withdrawals = [], summary = {}, month
         <Text style={styles.sectionTitle}>■ 振込一覧</Text>
         <Table data={transfers} />
         <Text style={styles.summary}>
-          {transfers.length} 件　合計: {transfers.reduce((sum, t) => sum + Number(t.amount || 0), 0).toLocaleString()} 円
+          {transfers.length} 件　合計:{' '}
+          {transfers.reduce((sum, t) => sum + Number(t.amount || 0), 0).toLocaleString()} 円
         </Text>
 
         <Text style={styles.sectionTitle}>■ 引落一覧</Text>
         <Table data={withdrawals} />
         <Text style={styles.summary}>
-          {withdrawals.length} 件　合計: {withdrawals.reduce((sum, t) => sum + Number(t.amount || 0), 0).toLocaleString()} 円
+          {withdrawals.length} 件　合計:{' '}
+          {withdrawals.reduce((sum, t) => sum + Number(t.amount || 0), 0).toLocaleString()} 円
         </Text>
 
         <Text style={styles.sectionTitle}>■ 総合計</Text>
         <Text style={styles.summary}>
-          総件数: {summary.total_count ?? 0} 件　総合計金額: {Number(summary.total_amount ?? 0).toLocaleString()} 円
+          総件数: {summary.total_count ?? 0} 件　総合計金額:{' '}
+          {Number(summary.total_amount ?? 0).toLocaleString()} 円
         </Text>
       </Page>
     </Document>

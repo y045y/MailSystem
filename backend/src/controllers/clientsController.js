@@ -37,8 +37,8 @@ exports.getClientById = async (req, res) => {
           model: Company,
           as: 'withdrawal_company',
           attributes: ['id', 'bank_name', 'bank_account'],
-        }
-      ]
+        },
+      ],
     });
 
     if (!client) {
@@ -50,11 +50,10 @@ exports.getClientById = async (req, res) => {
     console.error('❌ クライアント取得失敗:', err);
     res.status(500).json({
       error: 'クライアント取得に失敗しました',
-      details: err.message
+      details: err.message,
     });
   }
 };
-
 
 // ✅ 取引先登録（POST /clients）
 exports.createClient = async (req, res) => {
@@ -81,8 +80,6 @@ exports.createClient = async (req, res) => {
     res.status(500).json({ error: '取引先の登録に失敗しました', details: err.message });
   }
 };
-
-
 
 // ✅ 取引先更新（PUT /clients/:id）
 exports.updateClient = async (req, res) => {
@@ -129,10 +126,7 @@ exports.deleteClient = async (req, res) => {
     }
 
     // ✅ mails テーブルの client_id を NULL に更新（外部キー制約回避）
-    await Mail.update(
-      { client_id: null },
-      { where: { client_id: id } }
-    );
+    await Mail.update({ client_id: null }, { where: { client_id: id } });
 
     // ✅ 取引先削除
     await client.destroy();

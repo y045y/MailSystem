@@ -1,4 +1,4 @@
-import './App.css'; 
+import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import React, { useState, useEffect } from 'react';
 import MailForm from './components/MailForm';
@@ -8,8 +8,8 @@ import MailListNotices from './components/MailListNotices';
 import MailListOthers from './components/MailListOthers';
 import ClientMaster from './components/ClientMaster'; // ← 取引先マスタ
 import CompanyMaster from './components/CompanyMaster'; // ← 自社マスタ
+import CashPage from './components/CashPage'; // ← キャッシュページ
 // import { format } from 'date-fns';
-
 
 const App = () => {
   const [selectedTab, setSelectedTab] = useState('mail'); // 'mail' | 'client' | 'company'
@@ -17,7 +17,7 @@ const App = () => {
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const today = new Date();
     const year = today.getFullYear();
-    const month = (`0${today.getMonth() + 1}`).slice(-2);
+    const month = `0${today.getMonth() + 1}`.slice(-2);
     return `${year}-${month}`;
   });
 
@@ -30,13 +30,15 @@ const App = () => {
 
   // 月切り替えで支払日・受取日両方更新
   const setMonthAndDates = (year, month) => {
-    const paddedMonth = (`0${month}`).slice(-2);
+    const paddedMonth = `0${month}`.slice(-2);
     const monthStr = `${year}-${paddedMonth}`;
     setSelectedMonth(monthStr);
 
     const firstDay = `${monthStr}-01`;
     const lastDateObj = new Date(year, month, 0);
-    const lastDay = `${lastDateObj.getFullYear()}-${(`0${lastDateObj.getMonth() + 1}`).slice(-2)}-${(`0${lastDateObj.getDate()}`).slice(-2)}`;
+    const lastDay = `${lastDateObj.getFullYear()}-${`0${lastDateObj.getMonth() + 1}`.slice(
+      -2
+    )}-${`0${lastDateObj.getDate()}`.slice(-2)}`;
 
     setStartDate(firstDay);
     setEndDate(lastDay);
@@ -65,74 +67,61 @@ const App = () => {
     const today = new Date();
     setMonthAndDates(today.getFullYear(), today.getMonth() + 1);
   };
-  
 
   return (
     <div className="App">
       <h1>郵便物管理システム</h1>
-{/* タブ切り替え */}
-<div className="mb-3">
-  <button
-    onClick={() => setSelectedTab('mail')}
-    className="btn btn-secondary me-2"
-    style={{ minWidth: '100px' }}
-  >
-    郵便物
-  </button>
-  <button
-    onClick={() => setSelectedTab('client')}
-    className="btn btn-secondary me-2"
-    style={{ minWidth: '100px' }}
-  >
-    取引先マスタ
-  </button>
-  <button
-    onClick={() => setSelectedTab('company')}
-    className="btn btn-secondary"
-    style={{ minWidth: '100px' }}
-  >
-    自社マスタ
-  </button>
-</div>
-
-
+      {/* タブ切り替え */}
+      <div className="mb-4 d-flex flex-wrap gap-2">
+        <button onClick={() => setSelectedTab('mail')} className="btn btn-secondary">
+          郵便物
+        </button>
+        <button onClick={() => setSelectedTab('client')} className="btn btn-secondary">
+          取引先マスタ
+        </button>
+        <button onClick={() => setSelectedTab('company')} className="btn btn-secondary">
+          自社マスタ
+        </button>
+        <button onClick={() => setSelectedTab('cash')} className="btn btn-secondary">
+          キャッシュ
+        </button>
+      </div>
 
       {selectedTab === 'mail' ? (
         <>
           {/* 登録フォーム */}
-          <MailForm onSubmitted={() => setReloadKey(prev => prev + 1)} />
+          <MailForm onSubmitted={() => setReloadKey((prev) => prev + 1)} />
 
           <hr />
 
           {/* 月切り替え */}
-{/* 月切り替えボタン */}
-<div className="mb-3">
-  <label className="d-block mb-2">表示する月: {selectedMonth}</label>
-  <div>
-    <button
-      onClick={handlePrevMonth}
-      className="btn btn-secondary me-2"
-      style={{ minWidth: '80px' }}
-    >
-      前月
-    </button>
-    <button
-      onClick={handleThisMonth}
-      className="btn btn-secondary me-2"
-      style={{ minWidth: '80px' }}
-    >
-      当月
-    </button>
-    <button
-      onClick={handleNextMonth}
-      className="btn btn-secondary"
-      style={{ minWidth: '80px' }}
-    >
-      次月
-    </button>
-  </div>
-</div>
-
+          {/* 月切り替えボタン */}
+          <div className="mb-3">
+            <label className="d-block mb-2">表示する月: {selectedMonth}</label>
+            <div>
+              <button
+                onClick={handlePrevMonth}
+                className="btn btn-secondary me-2"
+                style={{ minWidth: '80px' }}
+              >
+                前月
+              </button>
+              <button
+                onClick={handleThisMonth}
+                className="btn btn-secondary me-2"
+                style={{ minWidth: '80px' }}
+              >
+                当月
+              </button>
+              <button
+                onClick={handleNextMonth}
+                className="btn btn-secondary"
+                style={{ minWidth: '80px' }}
+              >
+                次月
+              </button>
+            </div>
+          </div>
 
           {/* 支払日（振込・引落） */}
           <div style={{ marginBottom: '30px' }}>
@@ -144,11 +133,7 @@ const App = () => {
               style={{ marginRight: '20px' }}
             />
             <label>支払日（終了）:</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </div>
 
           {/* 一覧 */}
@@ -179,9 +164,11 @@ const App = () => {
         </>
       ) : selectedTab === 'client' ? (
         <ClientMaster />
-      ) : (
+      ) : selectedTab === 'company' ? (
         <CompanyMaster />
-      )}
+      ) : selectedTab === 'cash' ? (
+        <CashPage />
+      ) : null}
     </div>
   );
 };
