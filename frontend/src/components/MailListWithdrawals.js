@@ -145,8 +145,9 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
 
       {/* ✅ 引落一覧テーブル（修正済み） */}
       <table className="table table-bordered">
-        <thead className="table-dark">
+       <thead className="table-dark">
           <tr>
+            <th>受取日</th> {/* ← 追加 */}
             <th>引落日</th>
             <th>取引先</th>
             <th>金額</th>
@@ -157,34 +158,37 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
             <th>削除</th>
           </tr>
         </thead>
+
         <tbody>
-          {withdrawals.map((item, index) => (
-            <tr key={index}>
-              <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '―'}</td>
-              <td>{item.client_name || '―'}</td>
-              <td>{item.amount?.toLocaleString() || 0}</td>
-              <td>{item.bank_account_name || `${item.bank_name || ''}（${item.bank_account || ''}）` || '―'}</td>
-              <td>{item.description || ''}</td>
-              <td>{item.note || ''}</td>
-              <td>
-                <button
-                  onClick={() => handleEdit(item.id)}
-                  className="btn btn-secondary btn-sm"
-                >
-                  修正
-                </button>
-              </td>
-              <td>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="btn btn-danger btn-sm"
-                >
-                  削除
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
+  {withdrawals.map((item, index) => (
+    <tr key={index}>
+      <td>{item.received_at ? format(new Date(item.received_at), 'M/dd') : '―'}</td> {/* ← 追加 */}
+      <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '―'}</td>
+      <td>{item.client_name || '―'}</td>
+      <td>{item.amount?.toLocaleString() || 0}</td>
+      <td>{item.bank_account_name || `${item.bank_name || ''}（${item.bank_account || ''}）` || '―'}</td>
+      <td>{item.description || ''}</td>
+      <td>{item.note || ''}</td>
+      <td>
+        <button
+          onClick={() => handleEdit(item.id)}
+          className="btn btn-secondary btn-sm"
+        >
+          修正
+        </button>
+      </td>
+      <td>
+        <button
+          onClick={() => handleDelete(item.id)}
+          className="btn btn-danger btn-sm"
+        >
+          削除
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
       </table>
     </div>
   );

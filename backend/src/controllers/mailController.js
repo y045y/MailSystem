@@ -154,26 +154,29 @@ exports.getWithdrawalList = async (req, res) => {
 
   try {
     const results = await sequelize.query(
+      // 並び順：受取日 → 支払日 → 取引先名
       `SELECT
-        m.id,                                        -- 郵便物ID
-        m.payment_date,                              -- 支払日
-        m.type,                                      -- 種別（引落）
-        c.name AS client_name,                       -- 取引先名
-        m.amount,                                    -- 金額
-        (b.bank_name + '（' + b.bank_account + '）') AS bank_account_name,  -- 会社口座名（自社）
-        m.description,                               -- 説明
-        m.note                                       -- メモ
+        m.id,
+        m.received_at,
+        m.payment_date,
+        m.type,
+        c.name AS client_name,
+        m.amount,
+        (b.bank_name + '（' + b.bank_account + '）') AS bank_account_name,
+        m.description,
+        m.note
       FROM mails m
-      LEFT JOIN client_master c ON m.client_id = c.id           -- 取引先情報
-      LEFT JOIN company_master b ON m.bank_account_id = b.id    -- 自社口座情報
+      LEFT JOIN client_master c ON m.client_id = c.id
+      LEFT JOIN company_master b ON m.bank_account_id = b.id
       WHERE m.type = '引落'
         AND m.payment_date BETWEEN :startDate AND :endDate
-      ORDER BY c.name ASC, m.payment_date`,
+      ORDER BY m.received_at, m.payment_date, c.name`,
       {
         replacements: { startDate, endDate },
         type: sequelize.QueryTypes.SELECT,
       }
     );
+    
 
     // ✅ 正常レスポンス返却
     res.json(results);
@@ -186,7 +189,6 @@ exports.getWithdrawalList = async (req, res) => {
     });
   }
 };
-
 
 // 通知一覧取得（日付範囲指定）
 exports.getNoticeList = async (req, res) => {

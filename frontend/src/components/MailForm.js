@@ -39,13 +39,18 @@ const MailForm = ({ onReload }) => {
           } else {
             setBankAccounts([]);
           }
-        } else if (formData.type === '引落' || formData.type === 'カードの請求書') {
-          const res = await axios.get(`http://localhost:5000/company-master`);
-          const companies = res.data;
-          setBankAccounts(companies.map(c => ({
-            id: c.id,
-            name: `${c.bank_name}（${c.bank_account}）`
-          })));
+        } else if ((formData.type === '引落' || formData.type === 'カードの請求書') && formData.sender) {
+          const res = await axios.get(`http://localhost:5000/clients/${formData.sender}`);
+          const client = res.data;
+  
+          if (client.withdrawal_company) {
+            setBankAccounts([{
+              id: client.withdrawal_company.id,
+              name: `${client.withdrawal_company.bank_name}（${client.withdrawal_company.bank_account}）`
+            }]);
+          } else {
+            setBankAccounts([]);
+          }
         } else {
           setBankAccounts([]);
         }
@@ -54,9 +59,10 @@ const MailForm = ({ onReload }) => {
         setBankAccounts([]);
       }
     };
-
+  
     fetchBankAccounts();
   }, [formData.type, formData.sender]);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -26,10 +26,20 @@ exports.getClients = async (req, res) => {
   }
 };
 // ✅ 特定の取引先を取得（GET /clients/:id）
+// ✅ 特定の取引先を取得（GET /clients/:id）
 exports.getClientById = async (req, res) => {
   try {
     const id = req.params.id;
-    const client = await Client.findByPk(id);
+
+    const client = await Client.findByPk(id, {
+      include: [
+        {
+          model: Company,
+          as: 'withdrawal_company',
+          attributes: ['id', 'bank_name', 'bank_account'],
+        }
+      ]
+    });
 
     if (!client) {
       return res.status(404).json({ error: 'クライアントが見つかりません' });
@@ -38,9 +48,13 @@ exports.getClientById = async (req, res) => {
     res.json(client);
   } catch (err) {
     console.error('❌ クライアント取得失敗:', err);
-    res.status(500).json({ error: 'クライアント取得に失敗しました', details: err.message });
+    res.status(500).json({
+      error: 'クライアント取得に失敗しました',
+      details: err.message
+    });
   }
 };
+
 
 // ✅ 取引先登録（POST /clients）
 exports.createClient = async (req, res) => {

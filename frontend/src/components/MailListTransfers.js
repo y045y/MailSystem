@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFDownloadLink, Text } from '@react-pdf/renderer';
 import TransfersDocument from './TransfersDocument';
-import { format } from 'date-fns';
 import SummaryDocument from './SummaryDocument';
+import { format } from 'date-fns';
 
 const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
   const [transfers, setTransfers] = useState([]);
@@ -16,6 +16,14 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
     withdrawals: [],
     summary: {},
   });
+  const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    axios
+      .get('http://localhost:5000/clients')
+      .then((res) => setClients(res.data))
+      .catch((err) => console.error('取引先取得失敗:', err));
+  }, []);
 
   useEffect(() => {
     if (!startDate || !endDate) return;
@@ -53,7 +61,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         setSummaryLoading(false);
       })
       .catch((err) => {
-        console.error('📄 Summary PDF データ取得失敗:', err);
+        console.error('Summary PDF データ取得失敗:', err);
         setSummaryLoading(false);
       });
   }, [month, startDate, endDate, reloadKey]);
@@ -65,7 +73,6 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
 
   const handleSave = () => {
     if (!editTransfer?.id) return;
-
     axios
       .put(`http://localhost:5000/mails/${editTransfer.id}`, editTransfer)
       .then(() => {
@@ -81,7 +88,6 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
 
   const handleDelete = (id) => {
     if (!id) return;
-
     axios
       .delete(`http://localhost:5000/mails/${id}`)
       .then(() => {
@@ -108,26 +114,38 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
                 type="date"
                 value={editTransfer.payment_date?.slice(0, 10)}
                 onChange={(e) =>
-                  setEditTransfer({
-                    ...editTransfer,
-                    payment_date: e.target.value,
-                  })
+                  setEditTransfer({ ...editTransfer, payment_date: e.target.value })
                 }
               />
             </label>
+
             <label>
               取引先:
-              <input
-                type="text"
-                value={editTransfer.client_name || ''}
-                onChange={(e) =>
+              <select
+                value={editTransfer.client_id || ''}
+                onChange={(e) => {
+                  const clientId = parseInt(e.target.value, 10);
+                  const client = clients.find((c) => c.id === clientId);
+                  const accountName = client?.withdrawal_company
+                    ? `${client.withdrawal_company.bank_name} ${client.withdrawal_company.bank_account}`
+                    : '';
                   setEditTransfer({
                     ...editTransfer,
-                    client_name: e.target.value,
-                  })
-                }
-              />
+                    client_id: clientId,
+                    client_name: client?.name || '',
+                    bank_account_name: accountName,
+                  });
+                }}
+              >
+                <option value="">選択してください</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
             </label>
+
             <label>
               金額:
               <input
@@ -141,45 +159,38 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
                 }
               />
             </label>
+
             <label>
-              口座:
+              口座（自動セット）:
               <input
                 type="text"
                 value={editTransfer.bank_account_name || ''}
-                onChange={(e) =>
-                  setEditTransfer({
-                    ...editTransfer,
-                    bank_account_name: e.target.value,
-                  })
-                }
+                readOnly
               />
             </label>
+
             <label>
               説明:
               <input
                 type="text"
                 value={editTransfer.description || ''}
                 onChange={(e) =>
-                  setEditTransfer({
-                    ...editTransfer,
-                    description: e.target.value,
-                  })
+                  setEditTransfer({ ...editTransfer, description: e.target.value })
                 }
               />
             </label>
+
             <label>
               メモ:
               <input
                 type="text"
                 value={editTransfer.note || ''}
                 onChange={(e) =>
-                  setEditTransfer({
-                    ...editTransfer,
-                    note: e.target.value,
-                  })
+                  setEditTransfer({ ...editTransfer, note: e.target.value })
                 }
               />
             </label>
+
             <button type="button" onClick={handleSave}>
               保存
             </button>
@@ -194,9 +205,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               document={<TransfersDocument transfers={pdfData} month={month} />}
               fileName={`振込一覧_${month}.pdf`}
             >
-              {({ loading }) =>
-                loading ? 'PDFを生成中...' : '振込一覧PDF'
-              }
+              {({ loading }) => <Text>{loading ? 'PDFを生成中...' : '振込一覧PDF'}</Text>}
             </PDFDownloadLink>
 
             <PDFDownloadLink
@@ -210,7 +219,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               }
               fileName={`振込引落一覧_${month}.pdf`}
             >
-              {({ loading }) => (loading ? 'PDFを生成中...' : '振込＋引落帳票')}
+              {({ loading }) => <Text>{loading ? 'PDFを生成中...' : '振込＋引落帳票'}</Text>}
             </PDFDownloadLink>
           </>
         ) : (
@@ -221,7 +230,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       <table className="table table-bordered">
         <thead className="table-dark">
           <tr>
-            <th>受取日</th> {/* ✅ 追加 */}
+            <th>受取日</th>
             <th>支払日</th>
             <th>取引先</th>
             <th>金額</th>
@@ -233,32 +242,22 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
           </tr>
         </thead>
         <tbody>
-          {transfers.map((item, index) => (
-            <tr key={item.id || index}>
-              <td>
-                {item.received_at ? format(new Date(item.received_at), 'M/dd') : '---'}
-              </td>
-              <td>
-                {item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '---'}
-              </td>
+          {transfers.map((item) => (
+            <tr key={item.id}>
+              <td>{item.received_at ? format(new Date(item.received_at), 'M/dd') : '---'}</td>
+              <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '---'}</td>
               <td>{item.client_name}</td>
               <td>{item.amount}</td>
               <td>{item.bank_account_name}</td>
               <td>{item.description}</td>
               <td>{item.note}</td>
               <td>
-                <button
-                  onClick={() => handleEdit(item.id)}
-                  className="btn btn-secondary btn-sm"
-                >
+                <button onClick={() => handleEdit(item.id)} className="btn btn-secondary btn-sm">
                   修正
                 </button>
               </td>
               <td>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="btn btn-danger btn-sm"
-                >
+                <button onClick={() => handleDelete(item.id)} className="btn btn-danger btn-sm">
                   削除
                 </button>
               </td>

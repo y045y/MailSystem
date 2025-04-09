@@ -56,10 +56,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     padding: 4,
   },
-  cellDate: { width: '8%' },
+  cellReceived: { width: '7%' },
+  cellPayment: { width: '7%' },
   cellClient: { width: '18%' },
-  cellAmount: { width: '8%', textAlign: 'right' },
-  cellAccount: { width: '41%' },
+  cellAmount: { width: '10%', textAlign: 'right' },
+  cellAccount: { width: '33%' },
   cellNote: { width: '25%' },
   summary: {
     marginTop: 12,
@@ -71,7 +72,8 @@ const styles = StyleSheet.create({
 const Table = ({ data }) => (
   <View style={styles.table}>
     <View style={[styles.row, styles.header]}>
-      <Text style={[styles.cell, styles.cellDate]}>支払日</Text>
+      <Text style={[styles.cell, styles.cellReceived]}>受取日</Text>
+      <Text style={[styles.cell, styles.cellPayment]}>支払日</Text>
       <Text style={[styles.cell, styles.cellClient]}>取引先</Text>
       <Text style={[styles.cell, styles.cellAmount]}>金額</Text>
       <Text style={[styles.cell, styles.cellAccount]}>口座</Text>
@@ -79,7 +81,8 @@ const Table = ({ data }) => (
     </View>
     {data.length === 0 ? (
       <View style={styles.row}>
-        <Text style={[styles.cell, styles.cellDate]}>---</Text>
+        <Text style={[styles.cell, styles.cellReceived]}>---</Text>
+        <Text style={[styles.cell, styles.cellPayment]}>---</Text>
         <Text style={[styles.cell, styles.cellClient]}>データが存在しません</Text>
         <Text style={[styles.cell, styles.cellAmount]}>―</Text>
         <Text style={[styles.cell, styles.cellAccount]}>―</Text>
@@ -88,7 +91,10 @@ const Table = ({ data }) => (
     ) : (
       data.map((item, idx) => (
         <View style={styles.row} key={idx} wrap={false}>
-          <Text style={[styles.cell, styles.cellDate]}>
+          <Text style={[styles.cell, styles.cellReceived]}>
+            {formatDate(item.received_at)}
+          </Text>
+          <Text style={[styles.cell, styles.cellPayment]}>
             {formatDate(item.payment_date)}
           </Text>
           <Text style={[styles.cell, styles.cellClient]}>
