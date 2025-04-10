@@ -72,19 +72,21 @@ const App = () => {
     <div className="App">
       <h1>郵便物管理システム</h1>
       {/* タブ切り替え */}
-      <div className="mb-4 d-flex flex-wrap gap-2">
-        <button onClick={() => setSelectedTab('mail')} className="btn btn-secondary">
-          郵便物
-        </button>
-        <button onClick={() => setSelectedTab('client')} className="btn btn-secondary">
-          取引先マスタ
-        </button>
-        <button onClick={() => setSelectedTab('company')} className="btn btn-secondary">
-          自社マスタ
-        </button>
-        <button onClick={() => setSelectedTab('cash')} className="btn btn-secondary">
-          キャッシュ
-        </button>
+      <div className="mb-4 d-flex justify-content-center">
+        <div className="d-flex flex-wrap gap-2 justify-content-center">
+          <button onClick={() => setSelectedTab('mail')} className="btn btn-secondary">
+            郵便物
+          </button>
+          <button onClick={() => setSelectedTab('client')} className="btn btn-secondary">
+            取引先マスタ
+          </button>
+          <button onClick={() => setSelectedTab('company')} className="btn btn-secondary">
+            自社マスタ
+          </button>
+          <button onClick={() => setSelectedTab('cash')} className="btn btn-secondary">
+            キャッシュ
+          </button>
+        </div>
       </div>
 
       {selectedTab === 'mail' ? (
@@ -95,7 +97,6 @@ const App = () => {
           <hr />
 
           {/* 月切り替え */}
-          {/* 月切り替えボタン */}
           <div className="mb-3">
             <label className="d-block mb-2">表示する月: {selectedMonth}</label>
             <div>
