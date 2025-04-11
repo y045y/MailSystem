@@ -26,7 +26,6 @@ exports.getClients = async (req, res) => {
   }
 };
 // ✅ 特定の取引先を取得（GET /clients/:id）
-// ✅ 特定の取引先を取得（GET /clients/:id）
 exports.getClientById = async (req, res) => {
   try {
     const id = req.params.id;

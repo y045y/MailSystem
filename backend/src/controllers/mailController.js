@@ -295,15 +295,17 @@ exports.updateMail = async (req, res) => {
     }
 
     // 更新処理
-    mail.received_at = received_at || mail.received_at;
-    mail.client_id = client_id || mail.client_id;
-    mail.type = type || mail.type;
-    mail.payment_date = payment_date || mail.payment_date;
-    mail.bank_account_id = bank_account_id || mail.bank_account_id;
-    mail.amount = amount || mail.amount;
-    mail.description = description || mail.description;
-    mail.note = note || mail.note;
-    mail.status = status || mail.status;
+    mail.received_at = typeof received_at !== 'undefined' ? received_at : mail.received_at;
+    mail.client_id = typeof client_id !== 'undefined' ? client_id : mail.client_id;
+    mail.type = typeof type !== 'undefined' ? type : mail.type;
+    mail.payment_date = typeof payment_date !== 'undefined' ? payment_date : mail.payment_date;
+    mail.bank_account_id =
+      typeof bank_account_id !== 'undefined' ? bank_account_id : mail.bank_account_id;
+    mail.amount = typeof amount !== 'undefined' ? amount : mail.amount;
+    mail.description = typeof description !== 'undefined' ? description : mail.description;
+    mail.note = typeof note !== 'undefined' ? note : mail.note;
+    mail.status = typeof status !== 'undefined' ? status : mail.status;
+    
 
     // 保存
     await mail.save(); // データベースの更新

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { PDFDownloadLink, Text } from '@react-pdf/renderer';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import TransfersDocument from './TransfersDocument';
 import SummaryDocument from './SummaryDocument';
 import { format } from 'date-fns';
@@ -202,7 +202,11 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               document={<TransfersDocument transfers={pdfData} month={month} />}
               fileName={`振込一覧_${month}.pdf`}
             >
-              {({ loading }) => <Text>{loading ? 'PDFを生成中...' : '振込一覧PDF'}</Text>}
+              {({ loading }) => (
+                <button disabled={loading} className="btn btn-outline-primary btn-sm">
+                  {loading ? 'PDFを生成中...' : '振込一覧PDF'}
+                </button>
+              )}
             </PDFDownloadLink>
 
             <PDFDownloadLink
@@ -216,7 +220,11 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               }
               fileName={`振込引落一覧_${month}.pdf`}
             >
-              {({ loading }) => <Text>{loading ? 'PDFを生成中...' : '振込＋引落帳票'}</Text>}
+              {({ loading }) => (
+                <button disabled={loading} className="btn btn-outline-success btn-sm">
+                  {loading ? 'PDFを生成中...' : '振込＋引落帳票'}
+                </button>
+              )}
             </PDFDownloadLink>
           </>
         ) : (
