@@ -17,6 +17,11 @@ const Company = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    account_type: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: '流動', // 新規追加：流動／定期／積金などを分類
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: true,
