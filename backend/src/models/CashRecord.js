@@ -30,7 +30,11 @@ const CashRecord = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-
+    account_type: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: '流動', // ✅ デフォルト指定で安全
+    },
   },
   {
     tableName: 'cash_records',

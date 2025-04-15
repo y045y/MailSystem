@@ -9,6 +9,7 @@ const CashPage = () => {
     date: '',
     balance: '',
     note: '',
+    account_type: '流動',
   });
   const [cashRecords, setCashRecords] = useState([]);
   const [editRecord, setEditRecord] = useState(null);
@@ -52,7 +53,7 @@ const CashPage = () => {
         setEditRecord(null);
       } else {
         await axios.post('http://localhost:5000/cash-records', data);
-        setForm({ company_id: '', date: '', balance: '', note: '' });
+        setForm({ company_id: '', date: '', balance: '', note: '', account_type: '流動' });
       }
       fetchCashRecords();
     } catch (err) {
@@ -74,23 +75,28 @@ const CashPage = () => {
     }
   };
 
-  const groupAndLatest = (accountType) => {
-    const filteredCompanies = companies.filter((c) => c.account_type === accountType);
-    return filteredCompanies.map((company) => {
-      const records = cashRecords
-        .filter((r) => r.company_id === company.id)
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const groupLatestByAccountType = (accountType) => {
+    const latestByCompany = {};
 
-      return {
-        company,
-        latest: records[0] || null,
-      };
-    });
+    cashRecords
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .forEach((r) => {
+        if (!latestByCompany[r.company_id]) {
+          latestByCompany[r.company_id] = r;
+        }
+      });
+
+    return Object.values(latestByCompany)
+      .filter((r) => r.account_type === accountType)
+      .map((r) => ({
+        company: companies.find((c) => c.id === r.company_id) || {},
+        latest: r,
+      }));
   };
 
-  const ryudoData = groupAndLatest('流動');
-  const teikiData = groupAndLatest('定期');
-  const tsumikinData = groupAndLatest('積金');
+  const ryudoData = groupLatestByAccountType('流動');
+  const teikiData = groupLatestByAccountType('定期');
+  const tsumikinData = groupLatestByAccountType('積金');
 
   const RenderCashTable = ({ title, data }) => {
     const total = data.reduce((sum, d) => sum + (d.latest?.balance || 0), 0);
@@ -110,7 +116,7 @@ const CashPage = () => {
           </thead>
           <tbody>
             {data.map(({ company, latest }) => (
-              <tr key={company.id}>
+              <tr key={latest.id}>
                 <td>
                   {company.bank_name}（{company.bank_account}）
                 </td>
@@ -165,9 +171,22 @@ const CashPage = () => {
             <option value="">選択してください</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.bank_name}（{c.bank_account}）
+                [{c.account_type}] {c.bank_name}（{c.bank_account}）
               </option>
             ))}
+          </select>
+        </div>
+        <div className="col-auto">
+          <label className="form-label">口座区分</label>
+          <select
+            name="account_type"
+            value={(editRecord ? editRecord.account_type : form.account_type) ?? '流動'}
+            onChange={handleChange}
+            className="form-select"
+          >
+            <option value="流動">流動</option>
+            <option value="定期">定期</option>
+            <option value="積金">積金</option>
           </select>
         </div>
         <div className="col-auto">
@@ -210,7 +229,7 @@ const CashPage = () => {
               type="button"
               onClick={() => {
                 setEditRecord(null);
-                setForm({ company_id: '', date: '', balance: '', note: '' });
+                setForm({ company_id: '', date: '', balance: '', note: '', account_type: '流動' });
               }}
               className="btn btn-outline-secondary ms-2"
             >

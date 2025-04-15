@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const cashController = require('../controllers/cashController');
+const cashController = require('../controllers/cashRecordController');
 
-// 一覧取得
 router.get('/', cashController.getAllCashRecords);
-
-// 登録
 router.post('/', cashController.createCashRecord);
+
+// 🆕 更新・削除用エンドポイント
+router.put('/:id', cashController.updateCashRecord);
+router.delete('/:id', cashController.deleteCashRecord);
 
 module.exports = router;
