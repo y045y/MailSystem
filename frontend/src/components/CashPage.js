@@ -8,7 +8,7 @@ const CashPage = () => {
     company_id: '',
     date: '',
     balance: '',
-    note: ''
+    note: '',
   });
   const [cashRecords, setCashRecords] = useState([]);
   const [editRecord, setEditRecord] = useState(null);
@@ -89,10 +89,12 @@ const CashPage = () => {
         }
       });
 
-    return Object.values(latestByCompany).map((r) => {
-      const company = companies.find((c) => c.id === r.company_id);
-      return company ? { company, latest: r } : null;
-    }).filter(Boolean);
+    return Object.values(latestByCompany)
+      .map((r) => {
+        const company = companies.find((c) => c.id === r.company_id);
+        return company ? { company, latest: r } : null;
+      })
+      .filter(Boolean);
   };
 
   const ryudoData = groupLatestByAccountType('流動');
@@ -130,10 +132,7 @@ const CashPage = () => {
                   >
                     修正
                   </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() => handleDelete(latest.id)}
-                  >
+                  <button className="btn btn-sm btn-danger" onClick={() => handleDelete(latest.id)}>
                     削除
                   </button>
                 </td>
@@ -154,8 +153,8 @@ const CashPage = () => {
     <div className="container">
       <h2 className="my-3">キャッシュ管理</h2>
 
-      <form onSubmit={handleSubmit} className="row g-2 mb-4 align-items-end">
-        <div className="col-auto">
+      <form onSubmit={handleSubmit} className="row g-3 mb-4 align-items-end">
+        <div className="col-6 col-md-3">
           <label className="form-label">自社口座</label>
           <select
             name="company_id"
@@ -172,7 +171,7 @@ const CashPage = () => {
             ))}
           </select>
         </div>
-        <div className="col-auto">
+        <div className="col-6 col-md-2">
           <label className="form-label">日付</label>
           <input
             type="date"
@@ -180,12 +179,10 @@ const CashPage = () => {
             value={(editRecord ? editRecord.date : form.date) ?? ''}
             onChange={handleChange}
             className="form-control"
-            style={{ paddingTop: '8px', paddingBottom: '8px' }} // ★ 追加
             required
           />
-
         </div>
-        <div className="col-auto">
+        <div className="col-6 col-md-2">
           <label className="form-label">残高</label>
           <input
             type="number"
@@ -196,7 +193,7 @@ const CashPage = () => {
             required
           />
         </div>
-        <div className="col-auto">
+        <div className="col-6 col-md-3">
           <label className="form-label">メモ</label>
           <input
             name="note"
@@ -205,8 +202,8 @@ const CashPage = () => {
             className="form-control"
           />
         </div>
-        <div className="col-auto">
-          <button type="submit" className="btn btn-primary">
+        <div className="col-12 col-md-2">
+          <button type="submit" className="btn btn-primary w-100">
             {editRecord ? '保存' : '追加'}
           </button>
           {editRecord && (
@@ -216,7 +213,7 @@ const CashPage = () => {
                 setEditRecord(null);
                 setForm({ company_id: '', date: '', balance: '', note: '' });
               }}
-              className="btn btn-outline-secondary ms-2"
+              className="btn btn-outline-secondary w-100 mt-2"
             >
               キャンセル
             </button>
