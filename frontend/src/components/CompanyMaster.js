@@ -1,11 +1,10 @@
-// 📁 src/components/CompanyMaster.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const CompanyMaster = () => {
   const [companies, setCompanies] = useState([]);
-  const [form, setForm] = useState({ bank_name: '', bank_account: '' });
+  const [form, setForm] = useState({ bank_name: '', bank_account: '', account_type: '流動' });
   const [editCompany, setEditCompany] = useState(null);
 
   useEffect(() => {
@@ -46,7 +45,7 @@ const CompanyMaster = () => {
         setEditCompany(null);
       } else {
         await axios.post('http://localhost:5000/company-master', form);
-        setForm({ bank_name: '', bank_account: '' });
+        setForm({ bank_name: '', bank_account: '', account_type: '流動' });
       }
       fetchCompanies();
     } catch (err) {
@@ -79,7 +78,7 @@ const CompanyMaster = () => {
           <input
             type="text"
             name="bank_name"
-            value={editCompany ? editCompany.bank_name : form.bank_name}
+            value={(editCompany ? editCompany.bank_name : form.bank_name) ?? ''}
             onChange={handleChange}
             className="form-control"
             placeholder="例：三井住友"
@@ -91,12 +90,25 @@ const CompanyMaster = () => {
           <input
             type="text"
             name="bank_account"
-            value={editCompany ? editCompany.bank_account : form.bank_account}
+            value={(editCompany ? editCompany.bank_account : form.bank_account) ?? ''}
             onChange={handleChange}
             className="form-control"
             placeholder="例：1234567"
             required
           />
+        </div>
+        <div className="col-auto">
+          <label className="form-label">口座区分</label>
+          <select
+            name="account_type"
+            value={(editCompany ? editCompany.account_type : form.account_type) ?? '流動'}
+            onChange={handleChange}
+            className="form-select"
+            required
+          >
+            <option value="流動">流動</option>
+            <option value="定期">定期</option>
+          </select>
         </div>
         <div className="col-auto">
           <button type="submit" className="btn btn-secondary">
@@ -120,6 +132,7 @@ const CompanyMaster = () => {
           <tr>
             <th>銀行名</th>
             <th>口座番号</th>
+            <th>口座区分</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -128,6 +141,7 @@ const CompanyMaster = () => {
             <tr key={c.id}>
               <td>{c.bank_name}</td>
               <td>{c.bank_account}</td>
+              <td>{c.account_type}</td>
               <td>
                 <button
                   className="btn btn-sm btn-secondary me-2"

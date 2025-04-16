@@ -1,20 +1,24 @@
 const CashRecord = require('../models/CashRecord');
 
+// 一覧取得（会社情報とJOIN）
 exports.getAllCashRecords = async (req, res) => {
   try {
     const records = await CashRecord.findAll({ include: ['company'] });
     res.json(records);
   } catch (err) {
+    console.error('❌ 取得失敗:', err);
     res.status(500).json({ error: '取得失敗', details: err.message });
   }
 };
 
+// 登録
 exports.createCashRecord = async (req, res) => {
   try {
     console.log('📥 受け取ったデータ:', req.body);
 
-    const { company_id, date, balance, note, account_type } = req.body;
+    const { company_id, date, balance, note } = req.body;
 
+    // 日付形式チェック
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ error: '日付の形式が不正です（YYYY-MM-DD）' });
     }
@@ -24,20 +28,20 @@ exports.createCashRecord = async (req, res) => {
       date,
       balance,
       note,
-      account_type, // ✅ 新規追加：account_typeも保存
     });
 
     res.status(201).json(newRecord);
   } catch (err) {
-    console.error('❌ エラー詳細:', err);
+    console.error('❌ 登録エラー:', err);
     res.status(500).json({ error: '登録失敗', details: err.message });
   }
 };
 
+// 更新
 exports.updateCashRecord = async (req, res) => {
   try {
     const { id } = req.params;
-    const { company_id, date, balance, note, account_type } = req.body;
+    const { company_id, date, balance, note } = req.body;
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ error: '日付の形式が不正です（YYYY-MM-DD）' });
@@ -52,7 +56,6 @@ exports.updateCashRecord = async (req, res) => {
     record.date = date;
     record.balance = balance;
     record.note = note;
-    record.account_type = account_type; // ✅ 更新にも含める
 
     await record.save();
     res.json(record);
@@ -62,6 +65,7 @@ exports.updateCashRecord = async (req, res) => {
   }
 };
 
+// 削除
 exports.deleteCashRecord = async (req, res) => {
   try {
     const { id } = req.params;

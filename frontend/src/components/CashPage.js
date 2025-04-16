@@ -8,8 +8,7 @@ const CashPage = () => {
     company_id: '',
     date: '',
     balance: '',
-    note: '',
-    account_type: '流動',
+    note: ''
   });
   const [cashRecords, setCashRecords] = useState([]);
   const [editRecord, setEditRecord] = useState(null);
@@ -53,7 +52,7 @@ const CashPage = () => {
         setEditRecord(null);
       } else {
         await axios.post('http://localhost:5000/cash-records', data);
-        setForm({ company_id: '', date: '', balance: '', note: '', account_type: '流動' });
+        setForm({ company_id: '', date: '', balance: '', note: '' });
       }
       fetchCashRecords();
     } catch (err) {
@@ -79,6 +78,10 @@ const CashPage = () => {
     const latestByCompany = {};
 
     cashRecords
+      .filter((r) => {
+        const company = companies.find((c) => c.id === r.company_id);
+        return company?.account_type === accountType;
+      })
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .forEach((r) => {
         if (!latestByCompany[r.company_id]) {
@@ -86,17 +89,14 @@ const CashPage = () => {
         }
       });
 
-    return Object.values(latestByCompany)
-      .filter((r) => r.account_type === accountType)
-      .map((r) => ({
-        company: companies.find((c) => c.id === r.company_id) || {},
-        latest: r,
-      }));
+    return Object.values(latestByCompany).map((r) => {
+      const company = companies.find((c) => c.id === r.company_id);
+      return company ? { company, latest: r } : null;
+    }).filter(Boolean);
   };
 
   const ryudoData = groupLatestByAccountType('流動');
   const teikiData = groupLatestByAccountType('定期');
-  const tsumikinData = groupLatestByAccountType('積金');
 
   const RenderCashTable = ({ title, data }) => {
     const total = data.reduce((sum, d) => sum + (d.latest?.balance || 0), 0);
@@ -124,22 +124,18 @@ const CashPage = () => {
                 <td>{latest?.balance?.toLocaleString() || '0'} 円</td>
                 <td>{latest?.note || ''}</td>
                 <td>
-                  {latest && (
-                    <>
-                      <button
-                        className="btn btn-sm btn-secondary me-2"
-                        onClick={() => handleEdit(latest)}
-                      >
-                        修正
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(latest.id)}
-                      >
-                        削除
-                      </button>
-                    </>
-                  )}
+                  <button
+                    className="btn btn-sm btn-secondary me-2"
+                    onClick={() => handleEdit(latest)}
+                  >
+                    修正
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDelete(latest.id)}
+                  >
+                    削除
+                  </button>
                 </td>
               </tr>
             ))}
@@ -177,19 +173,6 @@ const CashPage = () => {
           </select>
         </div>
         <div className="col-auto">
-          <label className="form-label">口座区分</label>
-          <select
-            name="account_type"
-            value={(editRecord ? editRecord.account_type : form.account_type) ?? '流動'}
-            onChange={handleChange}
-            className="form-select"
-          >
-            <option value="流動">流動</option>
-            <option value="定期">定期</option>
-            <option value="積金">積金</option>
-          </select>
-        </div>
-        <div className="col-auto">
           <label className="form-label">日付</label>
           <input
             type="date"
@@ -197,8 +180,10 @@ const CashPage = () => {
             value={(editRecord ? editRecord.date : form.date) ?? ''}
             onChange={handleChange}
             className="form-control"
+            style={{ paddingTop: '8px', paddingBottom: '8px' }} // ★ 追加
             required
           />
+
         </div>
         <div className="col-auto">
           <label className="form-label">残高</label>
@@ -229,7 +214,7 @@ const CashPage = () => {
               type="button"
               onClick={() => {
                 setEditRecord(null);
-                setForm({ company_id: '', date: '', balance: '', note: '', account_type: '流動' });
+                setForm({ company_id: '', date: '', balance: '', note: '' });
               }}
               className="btn btn-outline-secondary ms-2"
             >
@@ -241,7 +226,6 @@ const CashPage = () => {
 
       <RenderCashTable title="使用中の口座（流動）" data={ryudoData} />
       <RenderCashTable title="定期預金" data={teikiData} />
-      <RenderCashTable title="積金" data={tsumikinData} />
     </div>
   );
 };

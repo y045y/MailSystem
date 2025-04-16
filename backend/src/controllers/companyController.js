@@ -18,16 +18,17 @@ exports.getCompanies = async (req, res) => {
 // ✅ 新規自社口座を登録 (POST /company-master)
 exports.createCompany = async (req, res) => {
   try {
-    const { bank_name, bank_account } = req.body;
+    const { bank_name, bank_account, account_type } = req.body;
 
-    if (!bank_name || !bank_account) {
-      return res.status(400).json({ error: 'bank_name と bank_account は必須です' });
+    if (!bank_name || !bank_account || !account_type) {
+      return res.status(400).json({ error: 'bank_name, bank_account, account_type は必須です' });
     }
 
     const newCompany = await Company.create({
       bank_name,
       bank_account,
-      created_at: new Date(), // ← これでOK。ISO文字列に変換しないこと。
+      account_type,
+      created_at: new Date(),
       updated_at: new Date(),
     });
 
@@ -42,15 +43,16 @@ exports.createCompany = async (req, res) => {
 exports.updateCompany = async (req, res) => {
   try {
     const { id } = req.params;
-    const { bank_name, bank_account } = req.body;
+    const { bank_name, bank_account, account_type } = req.body;
 
     const company = await Company.findByPk(id);
     if (!company) {
       return res.status(404).json({ error: 'Company not found' });
     }
 
-    company.bank_name = bank_name || company.bank_name;
-    company.bank_account = bank_account || company.bank_account;
+    company.bank_name = bank_name ?? company.bank_name;
+    company.bank_account = bank_account ?? company.bank_account;
+    company.account_type = account_type ?? company.account_type;
     company.updated_at = new Date();
 
     await company.save();
@@ -70,9 +72,7 @@ exports.deleteCompany = async (req, res) => {
       return res.status(404).json({ error: 'Company not found' });
     }
 
-    // 🔁 関連するclient_masterの外部キーをnullにする
     await Client.update({ withdrawal_company_id: null }, { where: { withdrawal_company_id: id } });
-
     await company.destroy();
 
     res.status(204).send();
