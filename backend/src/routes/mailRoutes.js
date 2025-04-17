@@ -16,6 +16,8 @@ const {
   getTransferAndWithdrawalSummary,
   updateMail,
   deleteMail,
+  markAsPaid,
+  markAsUnpaid,
 } = mailController;
 
 // 郵便物を新規登録
@@ -50,5 +52,10 @@ router.get('/withdrawal-list/:month', getWithdrawalListByMonth); // ←追加！
 
 // 📌 振込＋引落＋合計情報（PDF出力用）
 router.get('/transfer-withdrawal-summary', getTransferAndWithdrawalSummary);
+
+router.patch('/:id/mark-paid', markAsPaid);
+
+router.patch('/:id/mark-unpaid', markAsUnpaid);
+
 
 module.exports = router;

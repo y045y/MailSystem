@@ -37,7 +37,9 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         const filtered = Array.isArray(res.data)
           ? res.data.filter(
               (item) =>
-                item && typeof item.amount === 'number' && typeof item.payment_date === 'string'
+                item &&
+                typeof item.amount === 'number' &&
+                typeof item.payment_date === 'string'
             )
           : [];
         setTransfers(filtered);
@@ -55,6 +57,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         params: { startDate, endDate },
       })
       .then((res) => {
+        console.log('📦 summaryData.transfers sample:', res.data.transfers[0]);
         setSummaryData(res.data);
         setSummaryLoading(false);
       })
@@ -66,21 +69,23 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
 
   const handleEdit = (id) => {
     const target = transfers.find((t) => t.id === id);
-    setEditTransfer(target || null);
+    setEditTransfer(target ? { ...target } : null); // ← statusも含める
   };
+  
 
   const handleSave = () => {
     if (!editTransfer?.id) return;
     axios
-      .put(`http://localhost:5000/mails/${editTransfer.id}`, editTransfer)
-      .then(() => {
-        const updated = transfers.map((item) =>
-          item.id === editTransfer.id ? editTransfer : item
-        );
-        setTransfers(updated);
-        setPdfData(updated);
-        setEditTransfer(null);
-      })
+    .put(`http://localhost:5000/mails/${editTransfer.id}`, editTransfer)
+    .then(() => {
+      const updated = transfers.map((item) =>
+        item.id === editTransfer.id ? editTransfer : item
+      );
+      setTransfers(updated);
+      setPdfData(updated); // ← ここ忘れず
+      setEditTransfer(null);
+    })
+  
       .catch((err) => console.error('更新に失敗:', err));
   };
 
@@ -94,6 +99,44 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         setPdfData(updated);
       })
       .catch((err) => console.error('削除に失敗:', err));
+  };
+
+  const markAsPaid = async (id) => {
+    try {
+      await axios.patch(`http://localhost:5000/mails/${id}/mark-paid`);
+      setTransfers((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: '振込済み' } : item
+        )
+      );
+      setPdfData((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: '振込済み' } : item
+        )
+      );
+      
+    } catch (error) {
+      console.error('振込済みへの更新失敗:', error);
+    }
+  };
+
+  const markAsUnpaid = async (id) => {
+    try {
+      await axios.patch(`http://localhost:5000/mails/${id}/mark-unpaid`);
+      setTransfers((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: '振込済み' } : item
+        )
+      );
+      setPdfData((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: '振込済み' } : item
+        )
+      );
+      
+    } catch (error) {
+      console.error('未処理への更新失敗:', error);
+    }
   };
 
   if (loading) return <p>読み込み中...</p>;
@@ -111,7 +154,12 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <input
                 type="date"
                 value={editTransfer.payment_date?.slice(0, 10)}
-                onChange={(e) => setEditTransfer({ ...editTransfer, payment_date: e.target.value })}
+                onChange={(e) =>
+                  setEditTransfer({
+                    ...editTransfer,
+                    payment_date: e.target.value,
+                  })
+                }
               />
             </label>
 
@@ -168,7 +216,12 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <input
                 type="text"
                 value={editTransfer.description || ''}
-                onChange={(e) => setEditTransfer({ ...editTransfer, description: e.target.value })}
+                onChange={(e) =>
+                  setEditTransfer({
+                    ...editTransfer,
+                    description: e.target.value,
+                  })
+                }
               />
             </label>
 
@@ -177,7 +230,12 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <input
                 type="text"
                 value={editTransfer.note || ''}
-                onChange={(e) => setEditTransfer({ ...editTransfer, note: e.target.value })}
+                onChange={(e) =>
+                  setEditTransfer({
+                    ...editTransfer,
+                    note: e.target.value,
+                  })
+                }
               />
             </label>
 
@@ -215,6 +273,8 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
                   transfers={summaryData.transfers}
                   withdrawals={summaryData.withdrawals}
                   summary={summaryData.summary}
+                  balances={summaryData.balances}   
+                  totalCash={summaryData.totalCash} 
                   month={month}
                 />
               }
@@ -242,6 +302,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
             <th>口座</th>
             <th>説明</th>
             <th>メモ</th>
+            <th>状態</th>
             <th>修正</th>
             <th>削除</th>
           </tr>
@@ -256,6 +317,17 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <td>{item.bank_account_name}</td>
               <td>{item.description}</td>
               <td>{item.note}</td>
+              <td>
+                {item.status === '振込済み' ? (
+                  <button onClick={() => markAsUnpaid(item.id)} className="btn btn-outline-secondary btn-sm">
+                    未処理に戻す
+                  </button>
+                ) : (
+                  <button onClick={() => markAsPaid(item.id)} className="btn btn-success btn-sm">
+                    振込済みにする
+                  </button>
+                )}
+              </td>
               <td>
                 <button onClick={() => handleEdit(item.id)} className="btn btn-secondary btn-sm">
                   修正

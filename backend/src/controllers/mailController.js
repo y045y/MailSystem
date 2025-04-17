@@ -104,6 +104,7 @@ exports.getTransferList = async (req, res) => {
         m.received_at,  -- ✅ 受取日も取得（画面でソートに使う）
         m.payment_date,
         m.type,
+        m.status,
         c.name AS client_name,
         m.amount,
         -- 口座情報を1列にまとめて表示
@@ -401,7 +402,6 @@ exports.getWithdrawalListByMonth = async (req, res) => {
 exports.getTransferAndWithdrawalSummary = async (req, res) => {
   const { startDate, endDate } = req.query;
 
-  // バリデーションチェック
   if (!startDate || !endDate) {
     return res.status(400).json({ error: 'startDateとendDateは必須です' });
   }
@@ -417,11 +417,10 @@ exports.getTransferAndWithdrawalSummary = async (req, res) => {
       }
     );
 
-    // 👉 結果セットの分類処理
+    // ✅ 各結果セットを順番に取り出す（Sequelizeはすべて1配列になることがあるので型に注意）
     const transfers = resultSets.filter((r) => r.type === '振込');
     const withdrawals = resultSets.filter((r) => r.type === '引落');
     const summary = resultSets.find((r) => r.label === 'summary') || {
-      label: 'summary',
       transfer_count: 0,
       transfer_total: 0,
       withdrawal_count: 0,
@@ -429,12 +428,15 @@ exports.getTransferAndWithdrawalSummary = async (req, res) => {
       total_count: 0,
       total_amount: 0,
     };
+    const balances = resultSets.filter((r) => r.account_label); // ← 第4結果セット
+    const totalCash = resultSets.find((r) => r.label === 'total_cash') || { total_cash_balance: 0 };
 
-    // ✅ レスポンス返却
     res.status(200).json({
       transfers,
       withdrawals,
       summary,
+      balances,
+      totalCash,
     });
   } catch (err) {
     console.error('❌ ストアド実行失敗:', err);
@@ -444,3 +446,51 @@ exports.getTransferAndWithdrawalSummary = async (req, res) => {
     });
   }
 };
+
+// 振込済みに変更するAPI
+exports.markAsPaid = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const mail = await Mail.findByPk(id);
+    if (!mail) {
+      return res.status(404).json({ error: 'データが見つかりません' });
+    }
+
+    if (mail.type !== '振込') {
+      return res.status(400).json({ error: '振込以外は対象外です' });
+    }
+
+    mail.status = '振込済み';
+    await mail.save();
+
+    res.json({ message: '振込済みに更新しました', data: mail });
+  } catch (err) {
+    console.error('更新失敗:', err);
+    res.status(500).json({ error: 'サーバーエラー' });
+  }
+};
+exports.markAsUnpaid = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const mail = await Mail.findByPk(id);
+    if (!mail) {
+      return res.status(404).json({ error: 'データが見つかりません' });
+    }
+
+    if (mail.type !== '振込') {
+      return res.status(400).json({ error: '振込以外は対象外です' });
+    }
+
+    mail.status = '未処理';
+    await mail.save();
+
+    res.json({ message: '未処理に戻しました', data: mail });
+  } catch (err) {
+    console.error('更新失敗:', err);
+    res.status(500).json({ error: 'サーバーエラー' });
+  }
+};
+
+

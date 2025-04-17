@@ -70,6 +70,16 @@ const Mail = sequelize.define(
       defaultValue: DataTypes.NOW,
     },
 
+    status: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: '未処理',
+      validate: {
+        isIn: [['未処理', '振込済み']],
+      },
+    },
+    
+
     // 外部キー：取引先ID
     client_id: {
       type: DataTypes.INTEGER,
