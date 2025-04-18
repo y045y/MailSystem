@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginVertical: 8,
     fontWeight: 'bold',
-    pageBreakBefore: 'always'
+    pageBreakBefore: 'always',
   },
   table: {
     display: 'table',
@@ -58,12 +58,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     padding: 4,
   },
-  cellReceived: { width: '7%' },
-  cellPayment: { width: '7%' },
-  cellClient: { width: '18%' },
-  cellAmount: { width: '10%', textAlign: 'right' },
-  cellAccount: { width: '28%' },
-  cellNote: { width: '25%' },
+  cellReceived: { width: '8%' },
+  cellPayment: { width: '8%' },
+  cellClient: { width: '25%' },
+  cellAmount: { width: '12%', textAlign: 'right' },
+  cellAccount: { width: '42%' },
   cellStatus: { width: '5%', textAlign: 'center' },
   summary: {
     marginBottom: 20,
@@ -74,50 +73,82 @@ const styles = StyleSheet.create({
 
 const Table = ({ data }) => (
   <View style={styles.table} wrap>
+    {/* ヘッダー：1行目 */}
     <View style={[styles.row, styles.header]} fixed>
       <Text style={[styles.cell, styles.cellReceived]}>受取日</Text>
       <Text style={[styles.cell, styles.cellPayment]}>支払日</Text>
       <Text style={[styles.cell, styles.cellClient]}>取引先</Text>
       <Text style={[styles.cell, styles.cellAmount]}>金額</Text>
       <Text style={[styles.cell, styles.cellAccount]}>口座</Text>
-      <Text style={[styles.cell, styles.cellNote]}>備考</Text>
       <Text style={[styles.cell, styles.cellStatus]}>済</Text>
     </View>
+    {/* ヘッダー：2行目 備考 */}
+    <View style={[styles.row, styles.header]} fixed>
+      <Text style={[styles.cell, { width: '100%' }]}>備考</Text>
+    </View>
+
     {data.length === 0 ? (
-      <View style={styles.row}>
-        <Text style={[styles.cell, styles.cellReceived]}>---</Text>
-        <Text style={[styles.cell, styles.cellPayment]}>---</Text>
-        <Text style={[styles.cell, styles.cellClient]}>データが存在しません</Text>
-        <Text style={[styles.cell, styles.cellAmount]}>―</Text>
-        <Text style={[styles.cell, styles.cellAccount]}>―</Text>
-        <Text style={[styles.cell, styles.cellNote]}>―</Text>
-        <Text style={[styles.cell, styles.cellStatus]}>―</Text>
-      </View>
+      <>
+        <View style={styles.row}>
+          <Text style={[styles.cell, styles.cellReceived]}>---</Text>
+          <Text style={[styles.cell, styles.cellPayment]}>---</Text>
+          <Text style={[styles.cell, styles.cellClient]}>データが存在しません</Text>
+          <Text style={[styles.cell, styles.cellAmount]}>―</Text>
+          <Text style={[styles.cell, styles.cellAccount]}>―</Text>
+          <Text style={[styles.cell, styles.cellStatus]}>―</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={[styles.cell, { width: '100%' }]}>―</Text>
+        </View>
+      </>
     ) : (
       data.map((item, idx) => (
-        <View style={styles.row} key={idx} wrap>
-          <Text style={[styles.cell, styles.cellReceived]}>{formatDate(item.received_at)}</Text>
-          <Text style={[styles.cell, styles.cellPayment]}>{formatDate(item.payment_date)}</Text>
-          <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
-          <Text style={[styles.cell, styles.cellAmount]}>
-            {Number(item.amount || 0).toLocaleString()}
-          </Text>
-          <Text style={[styles.cell, styles.cellAccount]}>{item.bank_account_name || '―'}</Text>
-          <Text style={[styles.cell, styles.cellNote]}>
-            {item.description || item.note
-              ? [item.description, item.note].filter(Boolean).join(' / ')
-              : '―'}
-          </Text>
-          <Text style={[styles.cell, styles.cellStatus]}>
-            {item.status === '振込済み' ? '✓' : ''}
-          </Text>
+        <View key={idx} wrap>
+          {/* 1行目：基本 */}
+          <View style={styles.row}>
+            <Text style={[styles.cell, styles.cellReceived]}>{formatDate(item.received_at)}</Text>
+            <Text style={[styles.cell, styles.cellPayment]}>{formatDate(item.payment_date)}</Text>
+            <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
+            <Text style={[styles.cell, styles.cellAmount]}>
+              {Number(item.amount || 0).toLocaleString()}
+            </Text>
+            <Text style={[styles.cell, styles.cellAccount]}>{item.bank_account_name || '―'}</Text>
+            <Text style={[styles.cell, styles.cellStatus]}>
+              {item.status === '振込済み' ? '✓' : ''}
+            </Text>
+          </View>
+          {/* 2行目：備考 */}
+          <View style={styles.row}>
+            <Text
+              style={[
+                styles.cell,
+                {
+                  width: '100%',
+                  borderLeftWidth: 0,
+                  borderTopWidth: 0,
+                  paddingLeft: 8,
+                },
+              ]}
+            >
+              {item.description || item.note
+                ? [item.description, item.note].filter(Boolean).join(' / ')
+                : '―'}
+            </Text>
+          </View>
         </View>
       ))
     )}
   </View>
 );
 
-const SummaryDocument = ({ transfers = [], withdrawals = [], summary = {}, balances = [], totalCash = {}, month }) => {
+const SummaryDocument = ({
+  transfers = [],
+  withdrawals = [],
+  summary = {},
+  balances = [],
+  totalCash = {},
+  month,
+}) => {
   const monthLabel = formatMonthLabel(month);
 
   return (

@@ -56,14 +56,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     padding: 4,
   },
-  cellReceived: { width: '7%' },
-  cellDate: { width: '7%' },
-  cellClient: { width: '20%' },
-  cellAmount: { width: '9%', textAlign: 'right' },
-  cellAccount: { width: '33%' },
-  cellNote: { width: '24%' },
+  cellReceived: { width: '8%' },
+  cellDate: { width: '8%' },
+  cellClient: { width: '25%' },
+  cellAmount: { width: '12%', textAlign: 'right' },
+  cellAccount: { width: '42%' },
+  cellStatus: { width: '5%', textAlign: 'center' },
   summary: {
-    marginTop: 12,
+    marginTop: 20,
     textAlign: 'right',
     fontSize: 11,
   },
@@ -90,10 +90,9 @@ const TransfersDocument = ({ transfers = [], month }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <View>
-          <Text style={styles.title}>振込一覧帳票（{monthLabel}）</Text>
-        </View>
+        <Text style={styles.title}>振込一覧帳票（{monthLabel}）</Text>
 
+        {/* ✅ ヘッダー（2行構成） */}
         <View style={styles.table}>
           <View style={[styles.row, styles.header]}>
             <Text style={[styles.cell, styles.cellReceived]}>受取日</Text>
@@ -101,49 +100,84 @@ const TransfersDocument = ({ transfers = [], month }) => {
             <Text style={[styles.cell, styles.cellClient]}>取引先</Text>
             <Text style={[styles.cell, styles.cellAmount]}>金額</Text>
             <Text style={[styles.cell, styles.cellAccount]}>口座</Text>
-            <Text style={[styles.cell, styles.cellNote]}>備考</Text>
+            <Text style={[styles.cell, styles.cellStatus]}>済</Text>
+          </View>
+          <View style={[styles.row, styles.header]}>
+            <Text style={[styles.cell, { width: '100%' }]}>備考</Text>
           </View>
 
           {safeTransfers.length === 0 ? (
-            <View style={styles.row}>
-              <Text style={[styles.cell, styles.cellReceived]}>---</Text>
-              <Text style={[styles.cell, styles.cellDate]}>---</Text>
-              <Text style={[styles.cell, styles.cellClient]}>データが存在しません</Text>
-              <Text style={[styles.cell, styles.cellAmount]}></Text>
-              <Text style={[styles.cell, styles.cellAccount]}></Text>
-              <Text style={[styles.cell, styles.cellNote]}></Text>
-            </View>
+            <>
+              <View style={styles.row}>
+                <Text style={[styles.cell, styles.cellReceived]}>---</Text>
+                <Text style={[styles.cell, styles.cellDate]}>---</Text>
+                <Text style={[styles.cell, styles.cellClient]}>データが存在しません</Text>
+                <Text style={[styles.cell, styles.cellAmount]}></Text>
+                <Text style={[styles.cell, styles.cellAccount]}></Text>
+                <Text style={[styles.cell, styles.cellStatus]}></Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={[styles.cell, { width: '100%' }]}>―</Text>
+              </View>
+            </>
           ) : (
             safeTransfers.map((item, idx) => (
-              <View style={styles.row} key={idx} wrap={false}>
-                <Text style={[styles.cell, styles.cellReceived]}>
-                  {formatDate(item.received_at)}
-                </Text>
-                <Text style={[styles.cell, styles.cellDate]}>{formatDate(item.payment_date)}</Text>
-                <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
-                <Text style={[styles.cell, styles.cellAmount]}>
-                  {Number(item.amount).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </Text>
-                <Text style={[styles.cell, styles.cellAccount]}>
-                  {item.bank_account_name
-                    ? item.bank_account_name
-                    : item.bank_name && item.bank_account
-                    ? `${item.bank_name}（${item.bank_account}）`
-                    : '―'}
-                </Text>
-                <Text style={[styles.cell, styles.cellNote]}>
-                  {[item.description, item.note].filter(Boolean).join(' / ')}
-                </Text>
+              <View key={idx} wrap>
+                {/* 1行目：基本情報 */}
+                <View style={styles.row}>
+                  <Text style={[styles.cell, styles.cellReceived]}>
+                    {formatDate(item.received_at)}
+                  </Text>
+                  <Text style={[styles.cell, styles.cellDate]}>
+                    {formatDate(item.payment_date)}
+                  </Text>
+                  <Text style={[styles.cell, styles.cellClient]}>
+                    {item.client_name || '―'}
+                  </Text>
+                  <Text style={[styles.cell, styles.cellAmount]}>
+                    {Number(item.amount).toLocaleString(undefined, {
+                      maximumFractionDigits: 0,
+                    })}
+                  </Text>
+                  <Text style={[styles.cell, styles.cellAccount]}>
+                    {item.bank_account_name
+                      ? item.bank_account_name
+                      : item.bank_name && item.bank_account
+                      ? `${item.bank_name}（${item.bank_account}）`
+                      : '―'}
+                  </Text>
+                  <Text style={[styles.cell, styles.cellStatus]}>
+                    {item.status === '振込済み' ? '✓' : ''}
+                  </Text>
+                </View>
+
+                {/* 2行目：備考 */}
+                <View style={styles.row}>
+                  <Text
+                    style={[
+                      styles.cell,
+                      {
+                        width: '100%',
+                        borderLeftWidth: 0,
+                        borderTopWidth: 0,
+                        paddingLeft: 8,
+                      },
+                    ]}
+                  >
+                    {[item.description, item.note].filter(Boolean).join(' / ') || '―'}
+                  </Text>
+                </View>
               </View>
             ))
           )}
         </View>
 
-        <View>
-          <Text style={styles.summary}>
-            {`${safeTransfers.length} 件 合計: ${total.toLocaleString(undefined, { maximumFractionDigits: 0 })} 円`}
-          </Text>
-        </View>
+        {/* ✅ 件数と合計 */}
+        <Text style={styles.summary}>
+          {`${safeTransfers.length} 件 合計: ${total.toLocaleString(undefined, {
+            maximumFractionDigits: 0,
+          })} 円`}
+        </Text>
       </Page>
     </Document>
   );
