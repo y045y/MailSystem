@@ -4,6 +4,7 @@ import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/rendere
 Font.register({
   family: 'NotoSansJP',
   src: '/fonts/NotoSansJP-Regular.ttf',
+  fontStyle: 'normal',
 });
 
 const formatDate = (iso) => {
@@ -21,28 +22,27 @@ const formatMonthLabel = (monthStr) => {
 const styles = StyleSheet.create({
   page: {
     padding: 30,
-    fontSize: 10,
+    fontSize: 9.5,
     fontFamily: 'NotoSansJP',
   },
   title: {
     fontSize: 16,
-    marginBottom: 15,
+    marginBottom: 10,
     textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 12,
-    marginVertical: 8,
+    marginBottom: 6,
     fontWeight: 'bold',
-    pageBreakBefore: 'always',
+    textAlign: 'left',
   },
   table: {
     display: 'table',
     width: '100%',
     borderStyle: 'solid',
     borderWidth: 1,
-    borderRightWidth: 0,
     borderBottomWidth: 0,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   row: {
     flexDirection: 'row',
@@ -56,7 +56,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderLeftWidth: 0,
     borderTopWidth: 0,
-    padding: 4,
+    borderRightWidth: 1,
+    padding: 3,
   },
   cellReceived: { width: '8%' },
   cellPayment: { width: '8%' },
@@ -65,114 +66,85 @@ const styles = StyleSheet.create({
   cellAccount: { width: '42%' },
   cellStatus: { width: '5%', textAlign: 'center' },
   summary: {
-    marginBottom: 20,
+    marginTop: 12,
     textAlign: 'right',
-    fontSize: 11,
+    fontSize: 10,
+    paddingTop: 5,
+  },
+  finalSummary: {
+    fontSize: 10,
+    textAlign: 'right',
+    marginTop: 4,
   },
 });
 
-const Table = ({ data }) => (
-  <View style={styles.table} wrap>
-    {/* ヘッダー：1行目 */}
-    <View style={[styles.row, styles.header]} fixed>
-      <Text style={[styles.cell, styles.cellReceived]}>受取日</Text>
-      <Text style={[styles.cell, styles.cellPayment]}>支払日</Text>
-      <Text style={[styles.cell, styles.cellClient]}>取引先</Text>
-      <Text style={[styles.cell, styles.cellAmount]}>金額</Text>
-      <Text style={[styles.cell, styles.cellAccount]}>口座</Text>
-      <Text style={[styles.cell, styles.cellStatus]}>済</Text>
-    </View>
-    {/* ヘッダー：2行目 備考 */}
-    <View style={[styles.row, styles.header]} fixed>
-      <Text style={[styles.cell, { width: '100%' }]}>備考</Text>
-    </View>
+const renderTablePages = (data, title, totalCount, totalAmount, monthLabel, isFirstPage) => {
+  const itemsPerPage = 15;
+  const pages = [];
 
-    {data.length === 0 ? (
-      <>
-        <View style={styles.row}>
-          <Text style={[styles.cell, styles.cellReceived]}>---</Text>
-          <Text style={[styles.cell, styles.cellPayment]}>---</Text>
-          <Text style={[styles.cell, styles.cellClient]}>データが存在しません</Text>
-          <Text style={[styles.cell, styles.cellAmount]}>―</Text>
-          <Text style={[styles.cell, styles.cellAccount]}>―</Text>
-          <Text style={[styles.cell, styles.cellStatus]}>―</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={[styles.cell, { width: '100%' }]}>―</Text>
-        </View>
-      </>
-    ) : (
-      data.map((item, idx) => (
-        <View key={idx} wrap>
-          {/* 1行目：基本 */}
-          <View style={styles.row}>
-            <Text style={[styles.cell, styles.cellReceived]}>{formatDate(item.received_at)}</Text>
-            <Text style={[styles.cell, styles.cellPayment]}>{formatDate(item.payment_date)}</Text>
-            <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
-            <Text style={[styles.cell, styles.cellAmount]}>
-              {Number(item.amount || 0).toLocaleString()}
-            </Text>
-            <Text style={[styles.cell, styles.cellAccount]}>{item.bank_account_name || '―'}</Text>
-            <Text style={[styles.cell, styles.cellStatus]}>
-              {item.status === '振込済み' ? '✓' : ''}
-            </Text>
-          </View>
-          {/* 2行目：備考 */}
-          <View style={styles.row}>
-            <Text
-              style={[
-                styles.cell,
-                {
-                  width: '100%',
-                  borderLeftWidth: 0,
-                  borderTopWidth: 0,
-                  paddingLeft: 8,
-                },
-              ]}
-            >
-              {item.description || item.note
-                ? [item.description, item.note].filter(Boolean).join(' / ')
-                : '―'}
-            </Text>
-          </View>
-        </View>
-      ))
-    )}
-  </View>
-);
+  for (let i = 0; i < data.length; i += itemsPerPage) {
+    const pageData = data.slice(i, i + itemsPerPage);
+    const isLastPage = i + itemsPerPage >= data.length;
+    const showSummary = isLastPage;
 
-const SummaryDocument = ({
-  transfers = [],
-  withdrawals = [],
-  summary = {},
-  balances = [],
-  totalCash = {},
-  month,
-}) => {
+    pages.push(
+      <Page size="A4" style={styles.page} key={`${title}-${i}`} wrap>
+        {i === 0 && isFirstPage && (
+          <Text style={styles.title}>振込・引落一覧（{monthLabel}）</Text>
+        )}
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <View style={styles.table} wrap>
+          <View style={[styles.row, styles.header]}>
+            <Text style={[styles.cell, styles.cellReceived]}>受取日</Text>
+            <Text style={[styles.cell, styles.cellPayment]}>支払日</Text>
+            <Text style={[styles.cell, styles.cellClient]}>取引先</Text>
+            <Text style={[styles.cell, styles.cellAmount]}>金額</Text>
+            <Text style={[styles.cell, styles.cellAccount]}>口座</Text>
+            <Text style={[styles.cell, styles.cellStatus]}>済</Text>
+          </View>
+          <View style={[styles.row, styles.header]}>
+            <Text style={[styles.cell, { width: '100%' }]}>備考</Text>
+          </View>
+
+          {pageData.map((item, idx) => (
+            <React.Fragment key={idx}>
+              <View style={styles.row}>
+                <Text style={[styles.cell, styles.cellReceived]}>{formatDate(item.received_at)}</Text>
+                <Text style={[styles.cell, styles.cellPayment]}>{formatDate(item.payment_date)}</Text>
+                <Text style={[styles.cell, styles.cellClient]}>{item.client_name || '―'}</Text>
+                <Text style={[styles.cell, styles.cellAmount]}>{Number(item.amount || 0).toLocaleString()}</Text>
+                <Text style={[styles.cell, styles.cellAccount]}>{item.bank_account_name || '―'}</Text>
+                <Text style={[styles.cell, styles.cellStatus]}>{item.status === '振込済み' ? '✓' : ''}</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={[styles.cell, { width: '100%', borderTopWidth: 0, borderLeftWidth: 0, borderRightWidth: 0, paddingLeft: 6 }]}>{[item.description, item.note].filter(Boolean).join(' / ') || '―'}</Text>
+              </View>
+            </React.Fragment>
+          ))}
+        </View>
+        {showSummary && (
+          <Text style={styles.summary}>{`合計: ${totalCount} 件　${totalAmount.toLocaleString()} 円`}</Text>
+        )}
+      </Page>
+    );
+  }
+
+  return pages;
+};
+
+const SummaryDocument = ({ transfers = [], withdrawals = [], summary = {}, balances = [], totalCash = {}, month }) => {
   const monthLabel = formatMonthLabel(month);
+  const transferTotal = transfers.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const withdrawalTotal = withdrawals.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalCount = transfers.length + withdrawals.length;
+  const totalAmount = transferTotal + withdrawalTotal;
 
   return (
     <Document>
+      {renderTablePages(transfers, '■ 振込一覧', transfers.length, transferTotal, monthLabel, true)}
+      {renderTablePages(withdrawals, '■ 引落一覧', withdrawals.length, withdrawalTotal, monthLabel, false)}
       <Page size="A4" style={styles.page} wrap>
-        <Text style={styles.title}>振込・引落一覧（{monthLabel}）</Text>
-
-        <Text style={styles.sectionTitle}>■ 振込一覧</Text>
-        <Table data={transfers} />
-        <Text style={styles.summary}>
-          {transfers.length} 件　合計: {transfers.reduce((sum, t) => sum + Number(t.amount || 0), 0).toLocaleString()} 円
-        </Text>
-
-        <Text style={styles.sectionTitle}>■ 引落一覧</Text>
-        <Table data={withdrawals} />
-        <Text style={styles.summary}>
-          {withdrawals.length} 件　合計: {withdrawals.reduce((sum, t) => sum + Number(t.amount || 0), 0).toLocaleString()} 円
-        </Text>
-
-        <Text style={styles.sectionTitle}>■ 総合計</Text>
-        <Text style={styles.summary}>
-          総件数: {summary.total_count ?? 0} 件　総合計金額: {Number(summary.total_amount ?? 0).toLocaleString()} 円
-        </Text>
-
+        <Text style={styles.summary}>{`総件数: ${totalCount} 件　総合計金額: ${totalAmount.toLocaleString()} 円`}</Text>
         <Text style={styles.sectionTitle}>■ 流動口座残高</Text>
         <View style={styles.table} wrap>
           <View style={[styles.row, styles.header]}>
