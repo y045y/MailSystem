@@ -17,12 +17,25 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
     summary: {},
   });
   const [clients, setClients] = useState([]);
+  const [companies, setCompanies] = useState([]); // ← 追加
+  const [cashRecords, setCashRecords] = useState([]); // ← 追加
 
+  // ✅ AFTER（追加部分）
   useEffect(() => {
     axios
       .get('http://localhost:5000/clients')
       .then((res) => setClients(res.data))
       .catch((err) => console.error('取引先取得失敗:', err));
+
+    axios
+      .get('http://localhost:5000/company-master')
+      .then((res) => setCompanies(res.data))
+      .catch((err) => console.error('会社マスタ取得失敗:', err));
+
+    axios
+      .get('http://localhost:5000/cash-records')
+      .then((res) => setCashRecords(res.data))
+      .catch((err) => console.error('キャッシュ履歴取得失敗:', err));
   }, []);
 
   useEffect(() => {
@@ -37,9 +50,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         const filtered = Array.isArray(res.data)
           ? res.data.filter(
               (item) =>
-                item &&
-                typeof item.amount === 'number' &&
-                typeof item.payment_date === 'string'
+                item && typeof item.amount === 'number' && typeof item.payment_date === 'string'
             )
           : [];
         setTransfers(filtered);
@@ -71,21 +82,20 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
     const target = transfers.find((t) => t.id === id);
     setEditTransfer(target ? { ...target } : null); // ← statusも含める
   };
-  
 
   const handleSave = () => {
     if (!editTransfer?.id) return;
     axios
-    .put(`http://localhost:5000/mails/${editTransfer.id}`, editTransfer)
-    .then(() => {
-      const updated = transfers.map((item) =>
-        item.id === editTransfer.id ? editTransfer : item
-      );
-      setTransfers(updated);
-      setPdfData(updated); // ← ここ忘れず
-      setEditTransfer(null);
-    })
-  
+      .put(`http://localhost:5000/mails/${editTransfer.id}`, editTransfer)
+      .then(() => {
+        const updated = transfers.map((item) =>
+          item.id === editTransfer.id ? editTransfer : item
+        );
+        setTransfers(updated);
+        setPdfData(updated); // ← ここ忘れず
+        setEditTransfer(null);
+      })
+
       .catch((err) => console.error('更新に失敗:', err));
   };
 
@@ -105,16 +115,11 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
     try {
       await axios.patch(`http://localhost:5000/mails/${id}/mark-paid`);
       setTransfers((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, status: '振込済み' } : item
-        )
+        prev.map((item) => (item.id === id ? { ...item, status: '振込済み' } : item))
       );
       setPdfData((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, status: '振込済み' } : item
-        )
+        prev.map((item) => (item.id === id ? { ...item, status: '振込済み' } : item))
       );
-      
     } catch (error) {
       console.error('振込済みへの更新失敗:', error);
     }
@@ -124,16 +129,11 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
     try {
       await axios.patch(`http://localhost:5000/mails/${id}/mark-unpaid`);
       setTransfers((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, status: '振込済み' } : item
-        )
+        prev.map((item) => (item.id === id ? { ...item, status: '振込済み' } : item))
       );
       setPdfData((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, status: '振込済み' } : item
-        )
+        prev.map((item) => (item.id === id ? { ...item, status: '振込済み' } : item))
       );
-      
     } catch (error) {
       console.error('未処理への更新失敗:', error);
     }
@@ -256,6 +256,36 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: 20 }}>
         {pdfData.length > 0 && !summaryLoading ? (
           <>
+            {/* ✅ balances を加工して口座名付きにする */}
+            {companies.length > 0 && summaryData.balances.length > 0 && (
+              <PDFDownloadLink
+                document={
+                  <SummaryDocument
+                    balances={summaryData.balances.map((r) => {
+                      const c = r.company || {};
+                      return {
+                        account_name: `${c.bank_name || ''} ${c.branch_name || ''} ${
+                          c.account_type || ''
+                        }（${c.bank_account || ''}）`.trim(),
+                        balance: r.balance,
+                      };
+                    })}
+                    transfers={summaryData.transfers}
+                    withdrawals={summaryData.withdrawals}
+                    totalCash={summaryData.totalCash}
+                    month={month}
+                  />
+                }
+                eName={`振込引落一覧_${month}.pdf`}
+              >
+                {({ loading }) => (
+                  <button disabled={loading} className="btn btn-outline-success btn-sm">
+                    {loading ? 'PDFを生成中...' : '振込＋引落帳票'}
+                  </button>
+                )}
+              </PDFDownloadLink>
+            )}
+
             <PDFDownloadLink
               document={<TransfersDocument transfers={pdfData} month={month} />}
               fileName={`振込一覧_${month}.pdf`}
@@ -263,26 +293,6 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               {({ loading }) => (
                 <button disabled={loading} className="btn btn-outline-primary btn-sm">
                   {loading ? 'PDFを生成中...' : '振込一覧PDF'}
-                </button>
-              )}
-            </PDFDownloadLink>
-
-            <PDFDownloadLink
-              document={
-                <SummaryDocument
-                  transfers={summaryData.transfers}
-                  withdrawals={summaryData.withdrawals}
-                  summary={summaryData.summary}
-                  balances={summaryData.balances}   
-                  totalCash={summaryData.totalCash} 
-                  month={month}
-                />
-              }
-              fileName={`振込引落一覧_${month}.pdf`}
-            >
-              {({ loading }) => (
-                <button disabled={loading} className="btn btn-outline-success btn-sm">
-                  {loading ? 'PDFを生成中...' : '振込＋引落帳票'}
                 </button>
               )}
             </PDFDownloadLink>
@@ -319,7 +329,10 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <td>{item.note}</td>
               <td>
                 {item.status === '振込済み' ? (
-                  <button onClick={() => markAsUnpaid(item.id)} className="btn btn-outline-secondary btn-sm">
+                  <button
+                    onClick={() => markAsUnpaid(item.id)}
+                    className="btn btn-outline-secondary btn-sm"
+                  >
                     未処理に戻す
                   </button>
                 ) : (
