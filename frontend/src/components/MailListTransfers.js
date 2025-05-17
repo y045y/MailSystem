@@ -138,6 +138,27 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       console.error('未処理への更新失敗:', error);
     }
   };
+  const groupLatestByAccountType = (cashRecords, companies, accountType) => {
+    const latestByCompany = {};
+    cashRecords
+      .filter((r) => {
+        const company = companies.find((c) => c.id === r.company_id);
+        return company?.account_type === accountType;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .forEach((r) => {
+        if (!latestByCompany[r.company_id]) {
+          latestByCompany[r.company_id] = r;
+        }
+      });
+
+    return Object.values(latestByCompany)
+      .map((r) => {
+        const company = companies.find((c) => c.id === r.company_id);
+        return company ? { company, latest: r } : null;
+      })
+      .filter(Boolean);
+  };
 
   if (loading) return <p>読み込み中...</p>;
 
@@ -261,22 +282,22 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <PDFDownloadLink
                 document={
                   <SummaryDocument
-                    balances={summaryData.balances.map((r) => {
-                      const c = r.company || {};
-                      return {
-                        account_name: `${c.bank_name || ''} ${c.branch_name || ''} ${
-                          c.account_type || ''
-                        }（${c.bank_account || ''}）`.trim(),
-                        balance: r.balance,
-                      };
-                    })}
+                    balances={groupLatestByAccountType(cashRecords, companies, '流動').map(
+                      ({ company, latest }) => ({
+                        account_name: `${company.bank_name || ''}（${company.bank_account || ''}）`,
+                        balance: latest.balance,
+                      })
+                    )}
                     transfers={summaryData.transfers}
                     withdrawals={summaryData.withdrawals}
-                    totalCash={summaryData.totalCash}
+                    totalCash={groupLatestByAccountType(cashRecords, companies, '流動').reduce(
+                      (sum, { latest }) => sum + Number(latest.balance || 0),
+                      0
+                    )}
                     month={month}
                   />
                 }
-                eName={`振込引落一覧_${month}.pdf`}
+                fileName={`振込引落一覧_${month}.pdf`}
               >
                 {({ loading }) => (
                   <button disabled={loading} className="btn btn-outline-success btn-sm">

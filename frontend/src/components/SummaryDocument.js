@@ -1,4 +1,7 @@
 // 分割改ページ対応 SummaryDocument（15件＝30行ごと + 小計 + 流動口座）
+// ⬇︎ 振込・引落ページを分離してページ単位で構成（1ページに詰めすぎていた旧構成を解消）
+// ⬇︎ 流動口座名が空欄だった問題を account_name を確実に構成することで修正
+
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 
@@ -72,36 +75,15 @@ const groupByKey = (array, keyFn) => {
   }, {});
 };
 
-const SummaryDocument = ({
-  transfers = [],
-  withdrawals = [],
-  balances = [],
-  totalCash = 0,
-  month,
-}) => {
-  const monthLabel = formatMonthLabel(month);
-  const groupedTransfers = groupByKey(transfers, (item) => item.client_name || '―');
-  const groupedWithdrawals = groupByKey(
-    withdrawals,
-    (item) => item.bank_account_name || `${item.bank_name}（${item.bank_account}）`
-  );
-  const totalTransfer = transfers.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-  const totalWithdrawal = withdrawals.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
-  // ✅ 修正後（正しく表示される）
-  const computedBalances = balances.map((c) => ({
-    account_name: c.account_name,
-    balance: c.balance,
-  }));
-
-  const totalCount = transfers.length + withdrawals.length;
-  return (
-    <Document>
-      <Page size="A4" style={styles.page} wrap>
-        <Text style={styles.title}>振込・引落一覧帳票（{monthLabel}）</Text>
-
-        {/* 振込一覧（取引先ごと） */}
-        <Text style={styles.sectionTitle}>■ 振込一覧（取引先ごと）</Text>
+const renderTransferPages = (groupedTransfers) => {
+  const pages = [];
+  const clientEntries = Object.entries(groupedTransfers);
+  const chunkSize = 15;
+  for (let i = 0; i < clientEntries.length; i += chunkSize) {
+    const chunk = clientEntries.slice(i, i + chunkSize);
+    pages.push(
+      <Page size="A4" style={styles.page} wrap key={`transfer-${i}`}>
+        <Text style={styles.title}>振込一覧（取引先ごと）</Text>
         <View style={styles.table}>
           <View style={[styles.row, styles.header]}>
             <Text style={[styles.cell, { width: '8%' }]}>支払日</Text>
@@ -112,13 +94,13 @@ const SummaryDocument = ({
               済
             </Text>
           </View>
-          {Object.entries(groupedTransfers).map(([client, items], idx) => {
+          {chunk.map(([client, items], idx) => {
             const subtotal = items.reduce((sum, i) => sum + Number(i.amount || 0), 0);
             return (
               <React.Fragment key={idx}>
                 {items.map((item, i) => (
                   <React.Fragment key={i}>
-                    <View style={styles.row}>
+                    <View style={styles.row} wrap={false}>
                       <Text style={[styles.cell, { width: '8%' }]}>
                         {formatDate(item.payment_date)}
                       </Text>
@@ -153,11 +135,39 @@ const SummaryDocument = ({
             );
           })}
         </View>
-        <Text style={styles.summary}>
-          振込合計: {totalTransfer.toLocaleString()} 円（{transfers.length} 件）
-        </Text>
+      </Page>
+    );
+  }
+  return pages;
+};
 
-        {/* 引落一覧（銀行口座 → 取引先ごと） */}
+const SummaryDocument = ({
+  transfers = [],
+  withdrawals = [],
+  balances = [],
+  totalCash = 0,
+  month,
+}) => {
+  const monthLabel = formatMonthLabel(month);
+  const groupedTransfers = groupByKey(transfers, (item) => item.client_name || '―');
+  const groupedWithdrawals = groupByKey(
+    withdrawals,
+    (item) => item.bank_account_name || `${item.bank_name}（${item.bank_account}）`
+  );
+  const totalTransfer = transfers.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const totalWithdrawal = withdrawals.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const computedBalances = balances.map((c) => ({
+    account_name: c.account_name || `${c.bank_name || ''}（${c.bank_account || ''}）`,
+    balance: c.balance,
+  }));
+  const totalCount = transfers.length + withdrawals.length;
+
+  return (
+    <Document>
+      {renderTransferPages(groupedTransfers)}
+
+      <Page size="A4" style={styles.page} wrap>
+        <Text style={styles.title}>引落一覧・合計・流動口座残高（{monthLabel}）</Text>
         <Text style={styles.sectionTitle}>■ 引落一覧（銀行口座ごとの合計）</Text>
         {Object.entries(groupedWithdrawals).map(([accountLabel, items], idx) => {
           const groupedByClient = groupByKey(items, (item) => item.client_name || '―');
@@ -184,7 +194,7 @@ const SummaryDocument = ({
                     <React.Fragment key={ci}>
                       {rows.map((item, i) => (
                         <React.Fragment key={i}>
-                          <View style={styles.row}>
+                          <View style={styles.row} wrap={false}>
                             <Text style={[styles.cell, { width: '8%' }]}>
                               {formatDate(item.payment_date)}
                             </Text>
@@ -227,12 +237,9 @@ const SummaryDocument = ({
             </View>
           );
         })}
-
         <Text style={styles.summary}>
           引落合計: {totalWithdrawal.toLocaleString()} 円（{withdrawals.length} 件）
         </Text>
-
-        {/* 合計欄を流動口座の上に移動 */}
         <Text style={styles.sectionTitle}>■ 振込・引落 合計</Text>
         <Text style={styles.summary}>
           振込合計: {totalTransfer.toLocaleString()} 円（{transfers.length} 件）
@@ -243,8 +250,6 @@ const SummaryDocument = ({
         <Text style={styles.summary}>
           総合計金額: {(totalTransfer + totalWithdrawal).toLocaleString()} 円（{totalCount} 件）
         </Text>
-
-        {/* 流動口座残高 */}
         <Text style={styles.sectionTitle}>■ 流動口座残高</Text>
         <View style={styles.table}>
           <View style={[styles.row, styles.header]}>
