@@ -4,14 +4,13 @@ import { format } from 'date-fns';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import WithdrawalsDocument from './WithdrawalsDocument';
 
-const MailListWithdrawals = ({ startDate, endDate }) => {
+const MailListWithdrawals = ({ startDate, endDate, reloadKey, readOnly = false }) => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editWithdrawal, setEditWithdrawal] = useState(null);
   const [clients, setClients] = useState([]);
 
   useEffect(() => {
-    // ✅ 取引先一覧も取得（withdrawal_company含む）
     axios
       .get('http://localhost:5000/clients')
       .then((res) => setClients(res.data))
@@ -34,7 +33,8 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
         console.error('引落一覧の取得失敗:', err);
         setLoading(false);
       });
-  }, [startDate, endDate]);
+  }, [startDate, endDate, reloadKey]); // ← reloadKeyを追加
+
   const handleEdit = (id) => {
     const target = withdrawals.find((item) => item.id === id);
     setEditWithdrawal(target);
@@ -49,7 +49,7 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
       amount: editWithdrawal.amount,
       description: editWithdrawal.description || '',
       note: editWithdrawal.note || '',
-      bank_account_id: editWithdrawal.withdrawal_company_id || null, // ✅ ここが重要
+      bank_account_id: editWithdrawal.withdrawal_company_id || null,
     };
 
     axios
@@ -108,7 +108,7 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
         </div>
       )}
 
-      {editWithdrawal && (
+      {!readOnly && editWithdrawal && (
         <div>
           <h3>引落修正</h3>
           <form>
@@ -142,7 +142,7 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
                     client_id: clientId,
                     client_name: client?.name || '',
                     bank_account_name: accountName,
-                    withdrawal_company_id: client?.withdrawal_company?.id || null, // ←追加
+                    withdrawal_company_id: client?.withdrawal_company?.id || null,
                   });
                 }}
               >
@@ -191,7 +191,6 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
               />
             </label>
 
-            {/* ✅ ボタン2つ追加 */}
             <div style={{ marginTop: '10px' }}>
               <button type="button" onClick={handleSave} className="btn btn-primary me-2">
                 保存
@@ -218,8 +217,8 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
             <th>口座</th>
             <th>説明</th>
             <th>メモ</th>
-            <th>修正</th>
-            <th>削除</th>
+            {!readOnly && <th>修正</th>}
+            {!readOnly && <th>削除</th>}
           </tr>
         </thead>
 
@@ -237,16 +236,23 @@ const MailListWithdrawals = ({ startDate, endDate }) => {
               </td>
               <td>{item.description || ''}</td>
               <td>{item.note || ''}</td>
-              <td>
-                <button onClick={() => handleEdit(item.id)} className="btn btn-secondary btn-sm">
-                  修正
-                </button>
-              </td>
-              <td>
-                <button onClick={() => handleDelete(item.id)} className="btn btn-danger btn-sm">
-                  削除
-                </button>
-              </td>
+              {!readOnly && (
+                <>
+                  <td>
+                    <button
+                      onClick={() => handleEdit(item.id)}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      修正
+                    </button>
+                  </td>
+                  <td>
+                    <button onClick={() => handleDelete(item.id)} className="btn btn-danger btn-sm">
+                      削除
+                    </button>
+                  </td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>

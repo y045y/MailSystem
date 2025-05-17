@@ -128,16 +128,17 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
   const markAsUnpaid = async (id) => {
     try {
       await axios.patch(`http://localhost:5000/mails/${id}/mark-unpaid`);
-      setTransfers((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, status: '振込済み' } : item))
+      setTransfers(
+        (prev) => prev.map((item) => (item.id === id ? { ...item, status: '未処理' } : item)) // ← 修正
       );
-      setPdfData((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, status: '振込済み' } : item))
+      setPdfData(
+        (prev) => prev.map((item) => (item.id === id ? { ...item, status: '未処理' } : item)) // ← 修正
       );
     } catch (error) {
       console.error('未処理への更新失敗:', error);
     }
   };
+
   const groupLatestByAccountType = (cashRecords, companies, accountType) => {
     const latestByCompany = {};
     cashRecords
@@ -159,6 +160,13 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       })
       .filter(Boolean);
   };
+  // JSX より上で先に定義する
+  const grouped = groupLatestByAccountType(cashRecords, companies, '流動');
+  const balances = grouped.map(({ company, latest }) => ({
+    account_name: `${company.bank_name || ''}（${company.bank_account || ''}）`,
+    balance: latest.balance,
+  }));
+  const totalCash = grouped.reduce((sum, { latest }) => sum + Number(latest.balance || 0), 0);
 
   if (loading) return <p>読み込み中...</p>;
 
@@ -282,18 +290,10 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
               <PDFDownloadLink
                 document={
                   <SummaryDocument
-                    balances={groupLatestByAccountType(cashRecords, companies, '流動').map(
-                      ({ company, latest }) => ({
-                        account_name: `${company.bank_name || ''}（${company.bank_account || ''}）`,
-                        balance: latest.balance,
-                      })
-                    )}
+                    balances={balances}
                     transfers={summaryData.transfers}
                     withdrawals={summaryData.withdrawals}
-                    totalCash={groupLatestByAccountType(cashRecords, companies, '流動').reduce(
-                      (sum, { latest }) => sum + Number(latest.balance || 0),
-                      0
-                    )}
+                    totalCash={totalCash}
                     month={month}
                   />
                 }
@@ -306,7 +306,6 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
                 )}
               </PDFDownloadLink>
             )}
-
             <PDFDownloadLink
               document={<TransfersDocument transfers={pdfData} month={month} />}
               fileName={`振込一覧_${month}.pdf`}

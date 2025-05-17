@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 
-const MailListNotices = ({ month, startDate, endDate }) => {
+const MailListNotices = ({ month, startDate, endDate, reloadKey }) => {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editNotice, setEditNotice] = useState(null);
@@ -27,7 +27,7 @@ const MailListNotices = ({ month, startDate, endDate }) => {
         console.error('通知一覧の取得失敗:', err);
         setLoading(false);
       });
-  }, [month, startDate, endDate]);
+  }, [month, startDate, endDate, reloadKey]); // ✅ reloadKey 追加
 
   const handleEdit = (id) => {
     const noticeToEdit = notices.find((item) => item.id === id);

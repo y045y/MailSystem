@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 
-const MailListOthers = ({ startDate, endDate }) => {
+const MailListOthers = ({ startDate, endDate, reloadKey }) => {
   const [others, setOthers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editItem, setEditItem] = useState(null);
@@ -24,7 +24,7 @@ const MailListOthers = ({ startDate, endDate }) => {
         console.error('その他一覧の取得失敗:', err);
         setLoading(false);
       });
-  }, [startDate, endDate]);
+  }, [startDate, endDate, reloadKey]); // ← reloadKey を追加
 
   const handleEdit = (item) => {
     setEditItem(item);
