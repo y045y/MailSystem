@@ -39,43 +39,47 @@ const MailListWithdrawals = ({ startDate, endDate, reloadKey, readOnly = false }
     const target = withdrawals.find((item) => item.id === id);
     setEditWithdrawal(target);
   };
+const handleSave = () => {
+  if (!editWithdrawal?.id) return;
 
-  const handleSave = () => {
-    if (!editWithdrawal?.id) return;
+  const matchedClient = clients.find((c) => c.id === editWithdrawal.client_id);
+  const correctedBankAccountId = matchedClient?.withdrawal_company?.id || null;
 
-    const dataToUpdate = {
-      payment_date: editWithdrawal.payment_date,
-      client_id: editWithdrawal.client_id,
-      amount: editWithdrawal.amount,
-      description: editWithdrawal.description || '',
-      note: editWithdrawal.note || '',
-      bank_account_id: editWithdrawal.withdrawal_company_id || null,
-    };
+  const dataToUpdate = {
+    type: '引落',
+    status: editWithdrawal.status || '未処理',
+    payment_date: editWithdrawal.payment_date,
+    client_id: editWithdrawal.client_id,
+    amount: editWithdrawal.amount,
+    description: editWithdrawal.description || '',
+    note: editWithdrawal.note || '',
+    bank_account_id: correctedBankAccountId, // ← ここで明示的に再代入
+  };
 
-    axios
-      .put(`http://localhost:5000/mails/${editWithdrawal.id}`, dataToUpdate)
-      .then(() => {
-        const updated = withdrawals.map((item) => {
-          if (item.id === editWithdrawal.id) {
-            const matchedClient = clients.find((c) => c.id === editWithdrawal.client_id);
-            const bankAccountName = matchedClient?.withdrawal_company
-              ? `${matchedClient.withdrawal_company.bank_name}（${matchedClient.withdrawal_company.bank_account}）`
-              : '';
+  axios
+    .put(`http://localhost:5000/mails/${editWithdrawal.id}`, dataToUpdate)
+    .then(() => {
+      const bankAccountName = matchedClient?.withdrawal_company
+        ? `${matchedClient.withdrawal_company.bank_name}（${matchedClient.withdrawal_company.bank_account}）`
+        : '';
 
-            return {
+      const updated = withdrawals.map((item) =>
+        item.id === editWithdrawal.id
+          ? {
               ...item,
               ...editWithdrawal,
+              bank_account_id: correctedBankAccountId,
               bank_account_name: bankAccountName,
-            };
-          }
-          return item;
-        });
+            }
+          : item
+      );
 
-        setWithdrawals(updated);
-        setEditWithdrawal(null);
-      })
-      .catch((error) => console.error('更新に失敗:', error));
-  };
+      setWithdrawals(updated);
+      setEditWithdrawal(null);
+    })
+    .catch((error) => console.error('更新に失敗:', error));
+};
+
 
   const handleDelete = (id) => {
     if (!id) return;
@@ -137,13 +141,14 @@ const MailListWithdrawals = ({ startDate, endDate, reloadKey, readOnly = false }
                       }`
                     : '';
 
-                  setEditWithdrawal({
+                    setEditWithdrawal({
                     ...editWithdrawal,
                     client_id: clientId,
                     client_name: client?.name || '',
                     bank_account_name: accountName,
-                    withdrawal_company_id: client?.withdrawal_company?.id || null,
+                    bank_account_id: client?.withdrawal_company?.id || null,  // ← これが保存される
                   });
+
                 }}
               >
                 <option value="">選択してください</option>
