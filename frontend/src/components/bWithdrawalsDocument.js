@@ -157,7 +157,8 @@ const WithdrawalsDocument = ({ withdrawals = [], month }) => {
                   bankTotal += groupTotal;
 
                   return (
-                    <View key={clIdx} wrap={false}>
+                    // <View key={clIdx} wrap={false}>
+                    <View key={clIdx}>
                       {sortedItems.map((item, index) => (
                         <React.Fragment key={index}>
                           <View style={styles.row}>

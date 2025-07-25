@@ -8,178 +8,138 @@ Font.register({
 });
 
 const formatDate = (iso) => {
-  if (!iso || typeof iso !== 'string') return '---';
   const date = new Date(iso);
-  return isNaN(date.getTime()) ? '---' : `${date.getMonth() + 1}/${date.getDate()}`;
+  return isNaN(date) ? '―' : `${date.getMonth() + 1}/${date.getDate()}`;
 };
 
-const formatMonthLabel = (monthStr) => {
-  if (!monthStr) return '';
-  const [, m] = monthStr.split('-');
-  return `${parseInt(m, 10)}月分`;
+const formatMonth = (monthStr) => {
+  const [, m] = (monthStr || '').split('-');
+  return `${parseInt(m || '0', 10)}月分`;
 };
 
 const styles = StyleSheet.create({
   page: { padding: 30, fontSize: 10, fontFamily: 'NotoSansJP' },
   title: { fontSize: 16, marginBottom: 15, textAlign: 'center' },
-  table: {
-    display: 'table',
-    width: '100%',
-    borderLeft: 1,
-    borderTop: 0,
+  header: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderColor: '#000',
+    fontWeight: 'bold',
   },
-  row: { flexDirection: 'row' },
-  header: { backgroundColor: '#f0f0f0', fontWeight: 'bold' },
-  cell: {
-    borderStyle: 'solid',
-    borderWidth: 1,
-    borderLeftWidth: 0,
-    borderTopWidth: 0,
-    padding: 4,
+  row: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+    borderColor: '#000',
   },
-  cellReceived: { width: '8%' },
-  cellDate: { width: '8%' },
-  cellClient: { width: '25%' },
-  cellAmount: { width: '12%', textAlign: 'right' },
-  cellAccount: { width: '42%' },
-  cellStatus: { width: '5%', textAlign: 'center' },
-  summary: { marginTop: 20, textAlign: 'right', fontSize: 11 },
+  cell: { padding: 4 },
+  date: { width: '8%' },
+  client: { width: '20%' },
+  amount: { width: '10%', textAlign: 'right' },
+  account: { width: '30%' },
+  note: { width: '27%', fontSize: 7 },
+  noteHeader: {
+    width: '15%',
+    fontSize: 10, // ← 通常サイズ
+    fontWeight: 'bold',
+  },
+
+  status: { width: '5%', textAlign: 'center' },
+  subtotal: {
+    paddingTop: 2,
+    paddingBottom: 2,
+    textAlign: 'right',
+    fontWeight: 'bold',
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: '#000',
+  },
+  summary: {
+    marginTop: 20,
+    textAlign: 'right',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
 });
 
-const groupByKey = (array, keyFn) => {
-  return array.reduce((result, item) => {
-    const key = keyFn(item);
-    if (!result[key]) result[key] = [];
-    result[key].push(item);
-    return result;
+const groupTransfers = (array) => {
+  return array.reduce((grouped, item) => {
+    const client = item.client_name || '―';
+    const account =
+      item.bank_account_name || `${item.bank_name || ''}（${item.bank_account || '―'}）`;
+    const key = `${client}__${account}`;
+    grouped[key] ??= [];
+    grouped[key].push(item);
+    return grouped;
   }, {});
 };
 
 const TransfersDocument = ({ transfers = [], month }) => {
-  const safeTransfers = Array.isArray(transfers)
+  const list = Array.isArray(transfers)
     ? transfers.filter(
         (item) =>
           item &&
           typeof item.payment_date === 'string' &&
-          !isNaN(new Date(item.payment_date).getTime()) &&
+          !isNaN(new Date(item.payment_date)) &&
           typeof item.amount !== 'undefined'
       )
     : [];
 
-  const total = safeTransfers.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-  const monthLabel = formatMonthLabel(month);
-
-  const groupedTransfers = groupByKey(safeTransfers, (item) => {
-    const client = item.client_name || '―';
-    const account =
-      item.bank_account_name || `${item.bank_name || ''}（${item.bank_account || '―'}）`;
-    return `${client}__${account}`;
-  });
+  const monthLabel = formatMonth(month);
+  const grouped = groupTransfers(list);
+  const total = list.reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>振込一覧帳票（{monthLabel}）</Text>
 
-        {/* ✅ 固定ヘッダー */}
-        <View fixed>
-          <View
-            style={[
-              styles.row,
-              styles.header,
-              {
-                borderTopWidth: 1,
-                borderLeftWidth: 1,
-                borderRightWidth: 0,
-              },
-            ]}
-          >
-            <Text style={[styles.cell, styles.cellReceived]}>受取日</Text>
-            <Text style={[styles.cell, styles.cellDate]}>支払日</Text>
-            <Text style={[styles.cell, styles.cellClient]}>取引先</Text>
-            <Text style={[styles.cell, styles.cellAmount]}>金額</Text>
-            <Text style={[styles.cell, styles.cellAccount]}>口座</Text>
-            <Text style={[styles.cell, styles.cellStatus]}>済</Text>
-          </View>
-          <View
-            style={[
-              styles.row,
-              styles.header,
-              {
-                borderLeftWidth: 1,
-                borderRightWidth: 0,
-                borderBottomWidth: 0,
-              },
-            ]}
-          >
-            <Text style={[styles.cell, { width: '100%' }]}>備考</Text>
-          </View>
+        <View style={styles.header}>
+          <Text style={[styles.cell, styles.date]}>支払日</Text>
+          <Text style={[styles.cell, styles.client]}>取引先</Text>
+          <Text style={[styles.cell, styles.amount]}>金額</Text>
+          <Text style={[styles.cell, styles.account]}>口座</Text>
+          <Text style={[styles.cell, styles.note]}>備考</Text>
+          <Text style={[styles.cell, styles.status]}>済</Text>
         </View>
 
-        {/* ✅ 明細テーブル */}
-        <View style={styles.table}>
-          {Object.entries(groupedTransfers).map(([groupKey, items], idx) => {
-            const groupTotal = items.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-            const [clientName, accountName] = groupKey.split('__');
+        {Object.entries(grouped).map(([groupKey, items], accIdx) => {
+          const [clientName, accountName] = groupKey.split('__');
+          const subtotal = items.reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
-            return (
-              <React.Fragment key={idx}>
-                {items.map((item, subIdx) => (
-                  <View key={`${idx}-${subIdx}`} wrap>
-                    <View style={styles.row}>
-                      <Text style={[styles.cell, styles.cellReceived]}>
-                        {formatDate(item.received_at)}
-                      </Text>
-                      <Text style={[styles.cell, styles.cellDate]}>
-                        {formatDate(item.payment_date)}
-                      </Text>
-                      <Text style={[styles.cell, styles.cellClient]}>
-                        {item.client_name || '―'}
-                      </Text>
-                      <Text style={[styles.cell, styles.cellAmount]}>
-                        {Number(item.amount).toLocaleString()}
-                      </Text>
-                      <Text style={[styles.cell, styles.cellAccount]}>
-                        {item.bank_account_name
-                          ? item.bank_account_name
-                          : item.bank_name && item.bank_account
-                          ? `${item.bank_name}（${item.bank_account}）`
-                          : '―'}
-                      </Text>
-                      <Text style={[styles.cell, styles.cellStatus]}>
-                        {item.status === '振込済み' ? '✓' : ''}
-                      </Text>
-                    </View>
-                    <View style={styles.row}>
-                      <Text
-                        style={[
-                          styles.cell,
-                          { width: '100%', borderLeftWidth: 0, borderTopWidth: 0, paddingLeft: 8 },
-                        ]}
-                      >
-                        {[item.description, item.note].filter(Boolean).join(' / ') || '―'}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
+          return (
+            <View key={accIdx}>
+              {items.map((item, i) => (
+                <View style={styles.row} key={`${accIdx}-${i}`}>
+                  <Text style={[styles.cell, styles.date]}>{formatDate(item.payment_date)}</Text>
+                  <Text style={[styles.cell, styles.client]}>{item.client_name}</Text>
+                  <Text style={[styles.cell, styles.amount]}>
+                    {Number(item.amount).toLocaleString()}
+                  </Text>
+                  <Text style={[styles.cell, styles.account]}>
+                    {item.bank_account_name ||
+                      `${item.bank_name || ''}（${item.bank_account || '―'}）`}
+                  </Text>
+                  <Text style={[styles.cell, styles.note]} wrap={false}>
+                    {[item.description, item.note].filter(Boolean).join(' / ') || '―'}
+                  </Text>
+                  <Text style={[styles.cell, styles.status]}>
+                    {item.status === '振込済み' ? '✓' : ''}
+                  </Text>
+                </View>
+              ))}
 
-                {items.length > 1 && (
-                  <View style={[styles.row, { backgroundColor: '#eaeaea' }]}>
-                    <Text
-                      style={[styles.cell, { width: '100%', textAlign: 'right', paddingRight: 8 }]}
-                    >
-                      小計（{clientName} / {accountName}）: {groupTotal.toLocaleString()} 円
-                    </Text>
-                  </View>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </View>
+              {items.length > 1 && (
+                <Text style={styles.subtotal}>
+                  小計（{clientName} / {accountName}）: {subtotal.toLocaleString()} 円
+                </Text>
+              )}
+            </View>
+          );
+        })}
 
-        <Text style={styles.summary}>{`${
-          safeTransfers.length
-        } 件 合計: ${total.toLocaleString()} 円`}</Text>
+        <Text style={styles.summary}>
+          {list.length} 件 合計: {total.toLocaleString()} 円
+        </Text>
       </Page>
     </Document>
   );

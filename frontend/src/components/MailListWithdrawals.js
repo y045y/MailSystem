@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import WithdrawalsDocument from './WithdrawalsDocument';
+import WithdrawalsPagedDocument from './WithdrawalsPagedDocument';
 
 const MailListWithdrawals = ({ startDate, endDate, reloadKey, readOnly = false }) => {
   const [withdrawals, setWithdrawals] = useState([]);
@@ -104,7 +104,7 @@ const handleSave = () => {
       {withdrawals.length > 0 && (
         <div style={{ marginBottom: '1rem', textAlign: 'right' }}>
           <PDFDownloadLink
-            document={<WithdrawalsDocument withdrawals={withdrawals} month={month} />}
+            document={<WithdrawalsPagedDocument withdrawals={withdrawals} month={month} />}
             fileName={`引落一覧_${month}.pdf`}
           >
             {({ loading }) => (loading ? 'PDF生成中...' : 'PDFダウンロード')}
