@@ -24,6 +24,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
 
   // 取引先フィルタ（id で絞り込み）
   const [selectedClientId, setSelectedClientId] = useState('');
+  const [descriptionFilter, setDescriptionFilter] = useState('');
 
   // ---------------------------
   // マスタ系ロード
@@ -185,11 +186,34 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
   // ---------------------------
   // 取引先フィルタ（id ベース）
   // ---------------------------
-  const filteredTransfers = useMemo(() => {
-    if (!selectedClientId) return transfers;
-    const idNum = Number(selectedClientId);
-    return transfers.filter((t) => Number(t.client_id) === idNum);
-  }, [transfers, selectedClientId]);
+const filteredTransfers = useMemo(() => {
+  return transfers.filter((t) => {
+    // 取引先IDでの絞り込み
+    const clientOk = selectedClientId
+      ? Number(t.client_id) === Number(selectedClientId)
+      : true;
+
+    // 説明・メモのキーワード絞り込み（部分一致）
+    const keyword = descriptionFilter.trim();
+    const descText = `${t.description || ''}${t.note || ''}`; // 説明＋メモ
+    const descOk = keyword
+      ? descText.includes(keyword)
+      : true;
+
+    return clientOk && descOk;
+  });
+}, [transfers, selectedClientId, descriptionFilter]);
+
+  // ★ 表示中の振込の合計金額
+const totalAmount = useMemo(
+  () =>
+    (filteredTransfers || []).reduce(
+      (sum, t) => sum + Number(t.amount || 0),
+      0
+    ),
+  [filteredTransfers]
+);
+
 
   if (loading) return <p>読み込み中...</p>;
 
@@ -202,22 +226,34 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         <h2>振込一覧（{filteredTransfers.length}件）</h2>
 
         {/* 取引先コンボ（id ベース） */}
-        <div className="d-flex align-items-center" style={{ gap: '8px' }}>
-          <span>取引先で絞り込み:</span>
-          <select
-            className="form-select form-select-sm"
-            style={{ width: '260px' }}
-            value={selectedClientId}
-            onChange={(e) => setSelectedClientId(e.target.value)}
-          >
-            <option value="">（すべての取引先）</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.name}
-              </option>
-            ))}
-          </select>
-        </div>
+     <div className="d-flex align-items-center" style={{ gap: '8px' }}>
+  <span>取引先で絞り込み:</span>
+  <select
+    className="form-select form-select-sm"
+    style={{ width: '200px' }}
+    value={selectedClientId}
+    onChange={(e) => setSelectedClientId(e.target.value)}
+  >
+    <option value="">（すべての取引先）</option>
+    {clients.map((client) => (
+      <option key={client.id} value={client.id}>
+        {client.name}
+      </option>
+    ))}
+  </select>
+
+  {/* ★ 説明で絞り込み */}
+  <span className="ms-3">説明キーワード:</span>
+  <input
+    type="text"
+    className="form-control form-control-sm"
+    style={{ width: '220px' }}
+    placeholder="例）会議費 / 広告費 など"
+    value={descriptionFilter}
+    onChange={(e) => setDescriptionFilter(e.target.value)}
+  />
+</div>
+
       </div>
 
       {/* 編集フォーム */}
@@ -434,6 +470,13 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
           ))}
         </tbody>
       </table>
+
+      {filteredTransfers.length > 0 && (
+        <div className="text-end mt-2 fw-bold">
+          合計：{totalAmount.toLocaleString()} 円
+        </div>
+      )}
+
     </div>
   );
 };

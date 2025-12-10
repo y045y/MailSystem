@@ -6,12 +6,12 @@ import MailListTransfers from './components/MailListTransfers';
 import MailListWithdrawals from './components/MailListWithdrawals';
 import MailListNotices from './components/MailListNotices';
 import MailListOthers from './components/MailListOthers';
-import ClientMaster from './components/ClientMaster'; // ← 取引先マスタ
-import CompanyMaster from './components/CompanyMaster'; // ← 自社マスタ
-import CashPage from './components/CashPage'; // ← キャッシュページ
+import ClientMaster from './components/ClientMaster';
+import CompanyMaster from './components/CompanyMaster';
+import CashPage from './components/CashPage';
 
 const App = () => {
-  const [selectedTab, setSelectedTab] = useState('mail'); // 'mail' | 'client' | 'company'
+  const [selectedTab, setSelectedTab] = useState('mail');
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const today = new Date();
@@ -27,10 +27,12 @@ const App = () => {
   const [receivedStartDate, setReceivedStartDate] = useState('');
   const [receivedEndDate, setReceivedEndDate] = useState('');
 
-  // ★ 追加：月単位表示か、カスタム期間表示かのフラグ
   const [isCustomRange, setIsCustomRange] = useState(false);
 
-  // 月切り替えで支払日・受取日両方更新
+  // ★ 取引先絞り込み（振込・引落で共有）
+  const [selectedClientId, setSelectedClientId] = useState(null);
+
+  // 月切り替え…
   const setMonthAndDates = (year, month) => {
     const paddedMonth = `0${month}`.slice(-2);
     const monthStr = `${year}-${paddedMonth}`;
@@ -46,8 +48,6 @@ const App = () => {
     setEndDate(lastDay);
     setReceivedStartDate(firstDay);
     setReceivedEndDate(lastDay);
-
-    // ★ 月ボタンを押したときは「月モード」に戻す
     setIsCustomRange(false);
   };
 
@@ -169,6 +169,7 @@ const App = () => {
             startDate={startDate}
             endDate={endDate}
             reloadKey={reloadKey}
+            selectedClientId={selectedClientId} 
           />
           <MailListNotices
             month={selectedMonth}

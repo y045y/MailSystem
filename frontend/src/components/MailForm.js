@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// MailForm.js
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/MailForm.css';
@@ -6,7 +7,7 @@ import '../styles/MailForm.css';
 const MailForm = ({ onReload }) => {
   const [formData, setFormData] = useState({
     received_at: '',
-    sender: '',
+    sender: '',            // ← client_id を入れる
     type: '',
     payment_date: '',
     amount: '',
@@ -18,7 +19,9 @@ const MailForm = ({ onReload }) => {
 
   const [clients, setClients] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
+  const [clientFilter, setClientFilter] = useState(''); // ★ 取引先キーワード
 
+  // 取引先マスタ取得
   useEffect(() => {
     axios
       .get('http://localhost:5000/clients')
@@ -26,12 +29,29 @@ const MailForm = ({ onReload }) => {
       .catch((error) => console.error('クライアントデータの取得に失敗:', error));
   }, []);
 
+  // フィルタ後の取引先リスト（日本語もOK）
+  const filteredClients = useMemo(() => {
+    const keyword = clientFilter.trim();
+    if (!keyword) return clients;
+    return clients.filter((c) => c.name && c.name.includes(keyword));
+  }, [clients, clientFilter]);
+
+  // 口座情報取得
   useEffect(() => {
     const fetchBankAccounts = async () => {
       try {
-        if (formData.type === '振込' && formData.sender) {
-          const res = await axios.get(`http://localhost:5000/clients/${formData.sender}`);
-          const client = res.data;
+        if (!formData.type || !formData.sender) {
+          setBankAccounts([]);
+          return;
+        }
+
+        const res = await axios.get(
+          `http://localhost:5000/clients/${formData.sender}`
+        );
+        const client = res.data;
+
+        // 振込 → 取引先の振込口座
+        if (formData.type === '振込') {
           if (client.bank_name && client.bank_account) {
             setBankAccounts([
               {
@@ -42,13 +62,14 @@ const MailForm = ({ onReload }) => {
           } else {
             setBankAccounts([]);
           }
-        } else if (
-          (formData.type === '引落' || formData.type === 'カードの請求書') &&
-          formData.sender
-        ) {
-          const res = await axios.get(`http://localhost:5000/clients/${formData.sender}`);
-          const client = res.data;
+          return;
+        }
 
+        // 引落・カード請求 → 取引先マスタに紐づく会社マスタ口座
+        if (
+          formData.type === '引落' ||
+          formData.type === 'カードの請求書'
+        ) {
           if (client.withdrawal_company) {
             setBankAccounts([
               {
@@ -59,9 +80,10 @@ const MailForm = ({ onReload }) => {
           } else {
             setBankAccounts([]);
           }
-        } else {
-          setBankAccounts([]);
+          return;
         }
+
+        setBankAccounts([]);
       } catch (err) {
         console.error('口座情報の取得に失敗:', err);
         setBankAccounts([]);
@@ -71,6 +93,7 @@ const MailForm = ({ onReload }) => {
     fetchBankAccounts();
   }, [formData.type, formData.sender]);
 
+  // 共通 change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -79,19 +102,22 @@ const MailForm = ({ onReload }) => {
     }));
   };
 
+  // 送信
   const handleSubmit = (e) => {
     e.preventDefault();
 
     const dataToSend = {
-      client_id: parseInt(formData.sender),
+      client_id: formData.sender ? parseInt(formData.sender, 10) : null,
       received_at: formData.received_at || null,
       payment_date: formData.payment_date || null,
-      amount: parseFloat(formData.amount),
+      amount: formData.amount ? parseFloat(formData.amount) : 0,
       description: formData.description || '',
       note: formData.note || '',
       status: formData.status,
       type: formData.type,
-      bank_account_id: formData.bank_account_id ? parseInt(formData.bank_account_id) : null,
+      bank_account_id: formData.bank_account_id
+        ? parseInt(formData.bank_account_id, 10)
+        : null,
     };
 
     axios
@@ -120,7 +146,8 @@ const MailForm = ({ onReload }) => {
   return (
     <form onSubmit={handleSubmit} className="mail-form p-3">
       <div className="row g-3 align-items-end">
-        <div className="col-6 col-md-2">
+        {/* 確認日 */}
+        <div className="col-auto">
           <label className="form-label">確認日:</label>
           <input
             type="date"
@@ -131,17 +158,33 @@ const MailForm = ({ onReload }) => {
             required
           />
         </div>
-        <div className="col-6 col-md-2">
+
+        {/* 取引先キーワード（短く） */}
+        <div className="col-auto">
+          <label className="form-label">取引先キーワード</label>
+          <input
+            type="text"
+            className="form-control form-control-sm"
+            placeholder="検索"
+            value={clientFilter}
+            onChange={(e) => setClientFilter(e.target.value)}
+            style={{ width: '120px' }}
+          />
+        </div>
+
+        {/* 取引先コンボ（フィルタ反映 & 幅150px） */}
+        <div className="col-auto">
           <label className="form-label">取引先:</label>
           <select
             name="sender"
             value={formData.sender}
             onChange={handleChange}
-            className="form-select"
+            className="form-select form-select-sm"
             required
+            style={{ width: '150px' }}
           >
             <option value="">選択可</option>
-            {clients.map((client) => (
+            {filteredClients.map((client) => (
               <option key={client.id} value={client.id}>
                 {client.name}
               </option>
@@ -149,14 +192,14 @@ const MailForm = ({ onReload }) => {
           </select>
         </div>
 
-        <div className="col-6 col-md-2">
+        {/* 郵便種別 */}
+        <div className="col-auto">
           <label className="form-label">郵便種別:</label>
           <select
             name="type"
             value={formData.type}
             onChange={handleChange}
-            className="form-select"
-            required
+            className="form-select form-select-sm"
           >
             <option value="">選択可</option>
             <option value="引落">引落</option>
@@ -165,16 +208,18 @@ const MailForm = ({ onReload }) => {
             <option value="その他">その他</option>
           </select>
         </div>
+
+        {/* 振込・引落口座 */}
         {(formData.type === '振込' ||
           formData.type === '引落' ||
           formData.type === 'カードの請求書') && (
-          <div className="col-12 col-md-2">
+          <div className="col-auto">
             <label className="form-label">振込・引落口座:</label>
             <select
               name="bank_account_id"
               value={formData.bank_account_id}
               onChange={handleChange}
-              className="form-select"
+              className="form-select form-select-sm"
               required
             >
               <option value="">選択可</option>
@@ -187,24 +232,27 @@ const MailForm = ({ onReload }) => {
           </div>
         )}
 
-        <div className="col-6 col-md-2">
+        {/* 期限日 */}
+        <div className="col-auto">
           <label className="form-label">期限日:</label>
           <input
             type="date"
             name="payment_date"
             value={formData.payment_date}
             onChange={handleChange}
-            className="form-control"
+            className="form-control form-control-sm"
           />
         </div>
-        <div className="col-6 col-md-2">
+
+        {/* 金額 */}
+        <div className="col-auto">
           <label className="form-label">金額:</label>
           <input
             type="number"
             name="amount"
             value={formData.amount}
             onChange={handleChange}
-            className="form-control"
+            className="form-control form-control-sm"
             required={
               formData.type === '振込' ||
               formData.type === '引落' ||
@@ -213,7 +261,8 @@ const MailForm = ({ onReload }) => {
           />
         </div>
 
-        <div className="col-6 col-md-2">
+        {/* 説明 */}
+        <div className="col-12 col-md-3">
           <label className="form-label">説明:</label>
           <input
             type="text"
@@ -224,22 +273,30 @@ const MailForm = ({ onReload }) => {
           />
         </div>
 
-        {/* メモ欄と送信ボタンの並び */}
-        <div className="col-12 col-md-4">
-          <label className="form-label">メモ:</label>
-          <input
-            type="text"
-            name="note"
-            value={formData.note}
-            onChange={handleChange}
-            className="form-control"
-          />
-        </div>
+        {/* メモ + 送信ボタン横並び */}
+        <div className="col-12 d-flex align-items-end">
+          {/* メモ */}
+          <div className="flex-grow-1 me-2">
+            <label className="form-label">メモ:</label>
+            <input
+              type="text"
+              name="note"
+              value={formData.note}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
 
-        <div className="col-12 col-md-8 d-flex justify-content-end align-items-end">
-          <button type="submit" className="btn btn-secondary" style={{ width: '160px' }}>
-            送信
-          </button>
+          {/* 送信ボタン */}
+          <div className="pb-1">
+            <button
+              type="submit"
+              className="btn btn-secondary"
+              style={{ width: '160px' }}
+            >
+              送信
+            </button>
+          </div>
         </div>
       </div>
     </form>

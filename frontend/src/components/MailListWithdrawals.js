@@ -1,15 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import WithdrawalsPagedDocument from './WithdrawalsPagedDocument';
 
-const MailListWithdrawals = ({ startDate, endDate, reloadKey, readOnly = false }) => {
+// ★ selectedClientId を追加（親から渡してもらう）
+const MailListWithdrawals = ({
+  startDate,
+  endDate,
+  reloadKey,
+  readOnly = false,
+  selectedClientId,   // ← 取引先絞り込み用（id）
+}) => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editWithdrawal, setEditWithdrawal] = useState(null);
   const [clients, setClients] = useState([]);
 
+  // 取引先マスタ
   useEffect(() => {
     axios
       .get('http://localhost:5000/clients')
@@ -17,6 +25,7 @@ const MailListWithdrawals = ({ startDate, endDate, reloadKey, readOnly = false }
       .catch((err) => console.error('取引先取得失敗:', err));
   }, []);
 
+  // 引落一覧取得
   useEffect(() => {
     if (!startDate || !endDate) return;
 
@@ -33,53 +42,69 @@ const MailListWithdrawals = ({ startDate, endDate, reloadKey, readOnly = false }
         console.error('引落一覧の取得失敗:', err);
         setLoading(false);
       });
-  }, [startDate, endDate, reloadKey]); // ← reloadKeyを追加
+  }, [startDate, endDate, reloadKey]);
+
+  // ★ 取引先フィルタを適用した一覧
+  const filteredWithdrawals = useMemo(() => {
+    if (!selectedClientId) return withdrawals;
+    return withdrawals.filter((w) => w.client_id === selectedClientId);
+  }, [withdrawals, selectedClientId]);
+
+  // ★ 合計金額（フィルタ後ベース）
+  const totalAmount = useMemo(
+    () =>
+      filteredWithdrawals.reduce(
+        (sum, w) => sum + (Number(w.amount) || 0),
+        0
+      ),
+    [filteredWithdrawals]
+  );
 
   const handleEdit = (id) => {
     const target = withdrawals.find((item) => item.id === id);
     setEditWithdrawal(target);
   };
-const handleSave = () => {
-  if (!editWithdrawal?.id) return;
 
-  const matchedClient = clients.find((c) => c.id === editWithdrawal.client_id);
-  const correctedBankAccountId = matchedClient?.withdrawal_company?.id || null;
+  const handleSave = () => {
+    if (!editWithdrawal?.id) return;
 
-  const dataToUpdate = {
-    type: '引落',
-    status: editWithdrawal.status || '未処理',
-    payment_date: editWithdrawal.payment_date,
-    client_id: editWithdrawal.client_id,
-    amount: editWithdrawal.amount,
-    description: editWithdrawal.description || '',
-    note: editWithdrawal.note || '',
-    bank_account_id: correctedBankAccountId, // ← ここで明示的に再代入
+    const matchedClient = clients.find((c) => c.id === editWithdrawal.client_id);
+    const correctedBankAccountId = matchedClient?.withdrawal_company?.id || null;
+
+    const dataToUpdate = {
+      type: '引落',
+      status: editWithdrawal.status || '未処理',
+      payment_date: editWithdrawal.payment_date,
+      client_id: editWithdrawal.client_id,
+      amount: editWithdrawal.amount,
+      description: editWithdrawal.description || '',
+      note: editWithdrawal.note || '',
+      bank_account_id: correctedBankAccountId,
+    };
+
+    axios
+      .put(`http://localhost:5000/mails/${editWithdrawal.id}`, dataToUpdate)
+      .then(() => {
+        const bankAccountName = matchedClient?.withdrawal_company
+          ? `${matchedClient.withdrawal_company.bank_name}（${matchedClient.withdrawal_company.bank_account}）`
+          : '';
+
+        const updated = withdrawals.map((item) =>
+          item.id === editWithdrawal.id
+            ? {
+                ...item,
+                ...editWithdrawal,
+                bank_account_id: correctedBankAccountId,
+                bank_account_name: bankAccountName,
+              }
+            : item
+        );
+
+        setWithdrawals(updated);
+        setEditWithdrawal(null);
+      })
+      .catch((error) => console.error('更新に失敗:', error));
   };
-
-  axios
-    .put(`http://localhost:5000/mails/${editWithdrawal.id}`, dataToUpdate)
-    .then(() => {
-      const bankAccountName = matchedClient?.withdrawal_company
-        ? `${matchedClient.withdrawal_company.bank_name}（${matchedClient.withdrawal_company.bank_account}）`
-        : '';
-
-      const updated = withdrawals.map((item) =>
-        item.id === editWithdrawal.id
-          ? {
-              ...item,
-              ...editWithdrawal,
-              bank_account_id: correctedBankAccountId,
-              bank_account_name: bankAccountName,
-            }
-          : item
-      );
-
-      setWithdrawals(updated);
-      setEditWithdrawal(null);
-    })
-    .catch((error) => console.error('更新に失敗:', error));
-};
-
 
   const handleDelete = (id) => {
     if (!id) return;
@@ -99,12 +124,19 @@ const handleSave = () => {
 
   return (
     <div>
-      <h2>引落一覧（{withdrawals.length}件）</h2>
+      {/* 件数はフィルタ後 */}
+      <h2>引落一覧（{filteredWithdrawals.length}件）</h2>
 
-      {withdrawals.length > 0 && (
+      {/* PDFダウンロード（フィルタ後のデータで出力） */}
+      {filteredWithdrawals.length > 0 && (
         <div style={{ marginBottom: '1rem', textAlign: 'right' }}>
           <PDFDownloadLink
-            document={<WithdrawalsPagedDocument withdrawals={withdrawals} month={month} />}
+            document={
+              <WithdrawalsPagedDocument
+                withdrawals={filteredWithdrawals}
+                month={month}
+              />
+            }
             fileName={`引落一覧_${month}.pdf`}
           >
             {({ loading }) => (loading ? 'PDF生成中...' : 'PDFダウンロード')}
@@ -112,6 +144,7 @@ const handleSave = () => {
         </div>
       )}
 
+      {/* 編集ダイアログ（元のまま） */}
       {!readOnly && editWithdrawal && (
         <div>
           <h3>引落修正</h3>
@@ -122,7 +155,10 @@ const handleSave = () => {
                 type="date"
                 value={editWithdrawal.payment_date?.slice(0, 10) || ''}
                 onChange={(e) =>
-                  setEditWithdrawal({ ...editWithdrawal, payment_date: e.target.value })
+                  setEditWithdrawal({
+                    ...editWithdrawal,
+                    payment_date: e.target.value,
+                  })
                 }
               />
             </label>
@@ -141,14 +177,13 @@ const handleSave = () => {
                       }`
                     : '';
 
-                    setEditWithdrawal({
+                  setEditWithdrawal({
                     ...editWithdrawal,
                     client_id: clientId,
                     client_name: client?.name || '',
                     bank_account_name: accountName,
-                    bank_account_id: client?.withdrawal_company?.id || null,  // ← これが保存される
+                    bank_account_id: client?.withdrawal_company?.id || null,
                   });
-
                 }}
               >
                 <option value="">選択してください</option>
@@ -166,14 +201,21 @@ const handleSave = () => {
                 type="number"
                 value={editWithdrawal.amount || ''}
                 onChange={(e) =>
-                  setEditWithdrawal({ ...editWithdrawal, amount: parseFloat(e.target.value) || 0 })
+                  setEditWithdrawal({
+                    ...editWithdrawal,
+                    amount: parseFloat(e.target.value) || 0,
+                  })
                 }
               />
             </label>
 
             <label>
               自社口座（自動セット）:
-              <input type="text" value={editWithdrawal.bank_account_name || ''} readOnly />
+              <input
+                type="text"
+                value={editWithdrawal.bank_account_name || ''}
+                readOnly
+              />
             </label>
 
             <label>
@@ -182,7 +224,10 @@ const handleSave = () => {
                 type="text"
                 value={editWithdrawal.description || ''}
                 onChange={(e) =>
-                  setEditWithdrawal({ ...editWithdrawal, description: e.target.value })
+                  setEditWithdrawal({
+                    ...editWithdrawal,
+                    description: e.target.value,
+                  })
                 }
               />
             </label>
@@ -192,12 +237,21 @@ const handleSave = () => {
               <input
                 type="text"
                 value={editWithdrawal.note || ''}
-                onChange={(e) => setEditWithdrawal({ ...editWithdrawal, note: e.target.value })}
+                onChange={(e) =>
+                  setEditWithdrawal({
+                    ...editWithdrawal,
+                    note: e.target.value,
+                  })
+                }
               />
             </label>
 
             <div style={{ marginTop: '10px' }}>
-              <button type="button" onClick={handleSave} className="btn btn-primary me-2">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="btn btn-primary me-2"
+              >
                 保存
               </button>
               <button
@@ -212,6 +266,7 @@ const handleSave = () => {
         </div>
       )}
 
+      {/* 一覧は filteredWithdrawals を表示 */}
       <table className="table table-bordered">
         <thead className="table-dark">
           <tr>
@@ -228,10 +283,18 @@ const handleSave = () => {
         </thead>
 
         <tbody>
-          {withdrawals.map((item, index) => (
+          {filteredWithdrawals.map((item, index) => (
             <tr key={index}>
-              <td>{item.received_at ? format(new Date(item.received_at), 'M/dd') : '―'}</td>
-              <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '―'}</td>
+              <td>
+                {item.received_at
+                  ? format(new Date(item.received_at), 'M/dd')
+                  : '―'}
+              </td>
+              <td>
+                {item.payment_date
+                  ? format(new Date(item.payment_date), 'M/dd')
+                  : '―'}
+              </td>
               <td>{item.client_name || '―'}</td>
               <td>{item.amount?.toLocaleString() || 0}</td>
               <td>
@@ -252,7 +315,10 @@ const handleSave = () => {
                     </button>
                   </td>
                   <td>
-                    <button onClick={() => handleDelete(item.id)} className="btn btn-danger btn-sm">
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="btn btn-danger btn-sm"
+                    >
                       削除
                     </button>
                   </td>
@@ -262,6 +328,11 @@ const handleSave = () => {
           ))}
         </tbody>
       </table>
+
+      {/* ★ 右下に合計金額（フィルタ後） */}
+      <div style={{ textAlign: 'right', fontWeight: 'bold' }}>
+        合計：{totalAmount.toLocaleString()} 円
+      </div>
     </div>
   );
 };
