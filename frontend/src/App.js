@@ -9,7 +9,6 @@ import MailListOthers from './components/MailListOthers';
 import ClientMaster from './components/ClientMaster'; // ← 取引先マスタ
 import CompanyMaster from './components/CompanyMaster'; // ← 自社マスタ
 import CashPage from './components/CashPage'; // ← キャッシュページ
-// import { format } from 'date-fns';
 
 const App = () => {
   const [selectedTab, setSelectedTab] = useState('mail'); // 'mail' | 'client' | 'company'
@@ -28,6 +27,9 @@ const App = () => {
   const [receivedStartDate, setReceivedStartDate] = useState('');
   const [receivedEndDate, setReceivedEndDate] = useState('');
 
+  // ★ 追加：月単位表示か、カスタム期間表示かのフラグ
+  const [isCustomRange, setIsCustomRange] = useState(false);
+
   // 月切り替えで支払日・受取日両方更新
   const setMonthAndDates = (year, month) => {
     const paddedMonth = `0${month}`.slice(-2);
@@ -44,6 +46,9 @@ const App = () => {
     setEndDate(lastDay);
     setReceivedStartDate(firstDay);
     setReceivedEndDate(lastDay);
+
+    // ★ 月ボタンを押したときは「月モード」に戻す
+    setIsCustomRange(false);
   };
 
   useEffect(() => {
@@ -92,13 +97,18 @@ const App = () => {
       {selectedTab === 'mail' ? (
         <>
           {/* 登録フォーム */}
-          <MailForm onSubmitted={() => setReloadKey((prev) => prev + 1)} />
+          {/* ★ MailForm は onReload を見る実装なので prop 名を合わせておく */}
+          <MailForm onReload={() => setReloadKey((prev) => prev + 1)} />
 
           <hr />
 
-          {/* 月切り替え */}
+          {/* 月切り替え or 期間表示ラベル */}
           <div className="mb-3">
-            <label className="d-block mb-2">表示する月: {selectedMonth}</label>
+            <label className="d-block mb-2">
+              {isCustomRange
+                ? `表示期間: ${startDate || '未選択'} ～ ${endDate || '未選択'}`
+                : `表示する月: ${selectedMonth}`}
+            </label>
             <div>
               <button
                 onClick={handlePrevMonth}
@@ -130,11 +140,21 @@ const App = () => {
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setIsCustomRange(true); // ★ 手で変えたら「期間モード」
+              }}
               style={{ marginRight: '20px' }}
             />
             <label>支払日（終了）:</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setIsCustomRange(true); // ★ 同上
+              }}
+            />
           </div>
 
           {/* 一覧 */}

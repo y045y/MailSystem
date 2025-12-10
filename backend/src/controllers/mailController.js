@@ -90,24 +90,21 @@ exports.getMails = async (req, res) => {
 exports.getTransferList = async (req, res) => {
   const { startDate, endDate } = req.query;
 
-  // クエリパラメータがない場合は400エラー
   if (!startDate || !endDate) {
     return res.status(400).json({ error: 'startDate と endDate は必須です' });
   }
 
   try {
-    // 生SQLを使用して振込データを取得
     const results = await sequelize.query(
       `
       SELECT
         m.id,
-        m.received_at,  -- ✅ 受取日も取得（画面でソートに使う）
+        m.received_at,
         m.payment_date,
         m.type,
         m.status,
         c.name AS client_name,
         m.amount,
-        -- 口座情報を1列にまとめて表示
         (c.bank_name + '（' + c.bank_account + '）') AS bank_account_name,
         m.description,
         m.note
@@ -115,21 +112,20 @@ exports.getTransferList = async (req, res) => {
       LEFT JOIN client_master c ON m.client_id = c.id
       WHERE m.type = '振込'
         AND m.payment_date BETWEEN :startDate AND :endDate
-      ORDER BY m.received_at, c.name ASC, m.payment_date
+      ORDER BY 
+        m.payment_date ASC,
+        c.name ASC,
+        m.received_at ASC,
+        m.id ASC
       `,
       {
-        replacements: {
-          startDate,
-          endDate,
-        },
+        replacements: { startDate, endDate },
         type: sequelize.QueryTypes.SELECT,
       }
     );
 
-    // 成功時：JSONで返却
     res.status(200).json(results);
   } catch (err) {
-    // エラー時：ログ出力 & 500エラー返却
     console.error('❌ Error in getTransferList:', err);
     res.status(500).json({
       error: '一覧取得失敗',
@@ -138,19 +134,19 @@ exports.getTransferList = async (req, res) => {
   }
 };
 
+
 // 引落一覧取得（日付範囲指定対応）
 exports.getWithdrawalList = async (req, res) => {
   const { startDate, endDate } = req.query;
 
-  // 🔍 バリデーション: startDate または endDate がない場合は 400
   if (!startDate || !endDate) {
     return res.status(400).json({ error: 'startDate と endDate は必須です' });
   }
 
   try {
     const results = await sequelize.query(
-      // 並び順：受取日 → 支払日 → 取引先名
-      `SELECT
+      `
+      SELECT
         m.id,
         m.received_at,
         m.payment_date,
@@ -165,17 +161,20 @@ exports.getWithdrawalList = async (req, res) => {
       LEFT JOIN company_master b ON m.bank_account_id = b.id
       WHERE m.type = '引落'
         AND m.payment_date BETWEEN :startDate AND :endDate
-      ORDER BY m.received_at, m.payment_date, c.name`,
+      ORDER BY 
+        m.payment_date ASC,
+        c.name ASC,
+        m.received_at ASC,
+        m.id ASC
+      `,
       {
         replacements: { startDate, endDate },
         type: sequelize.QueryTypes.SELECT,
       }
     );
 
-    // ✅ 正常レスポンス返却
     res.json(results);
   } catch (err) {
-    // ❌ エラー処理
     console.error('引落一覧取得失敗:', err);
     res.status(500).json({
       error: '引落一覧取得失敗',
@@ -183,6 +182,7 @@ exports.getWithdrawalList = async (req, res) => {
     });
   }
 };
+
 
 // 通知一覧取得（日付範囲指定）
 exports.getNoticeList = async (req, res) => {
