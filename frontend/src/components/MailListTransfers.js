@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import TransfersDocument from './TransfersDocument';
@@ -7,20 +7,27 @@ import { format } from 'date-fns';
 
 const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
   const [transfers, setTransfers] = useState([]);
-  const [pdfData, setPdfData] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [editTransfer, setEditTransfer] = useState(null);
+
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summaryData, setSummaryData] = useState({
     transfers: [],
     withdrawals: [],
-    summary: {},
+    balances: [],
   });
-  const [clients, setClients] = useState([]);
-  const [companies, setCompanies] = useState([]); // ← 追加
-  const [cashRecords, setCashRecords] = useState([]); // ← 追加
 
-  // ✅ AFTER（追加部分）
+  const [clients, setClients] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [cashRecords, setCashRecords] = useState([]);
+
+  // 取引先フィルタ（id で絞り込み）
+  const [selectedClientId, setSelectedClientId] = useState('');
+
+  // ---------------------------
+  // マスタ系ロード
+  // ---------------------------
   useEffect(() => {
     axios
       .get('http://localhost:5000/clients')
@@ -38,6 +45,9 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       .catch((err) => console.error('キャッシュ履歴取得失敗:', err));
   }, []);
 
+  // ---------------------------
+  // 振込一覧 + Summary 用データ
+  // ---------------------------
   useEffect(() => {
     if (!startDate || !endDate) return;
 
@@ -47,14 +57,19 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         params: { startDate, endDate },
       })
       .then((res) => {
+        console.log('📥 transfers API raw:', res.data);
+
         const filtered = Array.isArray(res.data)
           ? res.data.filter(
               (item) =>
-                item && typeof item.amount === 'number' && typeof item.payment_date === 'string'
+                item &&
+                typeof item.amount === 'number' &&
+                typeof item.payment_date === 'string'
             )
           : [];
+
         setTransfers(filtered);
-        setPdfData(filtered);
+        setSelectedClientId(''); // 期間変更時は絞り込み解除
         setLoading(false);
       })
       .catch((err) => {
@@ -62,14 +77,15 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         setLoading(false);
       });
 
+    // Summary PDF 用
     setSummaryLoading(true);
     axios
       .get('http://localhost:5000/mails/transfer-withdrawal-summary', {
         params: { startDate, endDate },
       })
       .then((res) => {
-        console.log('📦 summaryData.transfers sample:', res.data.transfers[0]);
-        setSummaryData(res.data);
+        console.log('📦 summaryData.transfers sample:', res.data.transfers?.[0]);
+        setSummaryData(res.data || { transfers: [], withdrawals: [], balances: [] });
         setSummaryLoading(false);
       })
       .catch((err) => {
@@ -78,35 +94,35 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       });
   }, [month, startDate, endDate, reloadKey]);
 
+  // ---------------------------
+  // 行操作
+  // ---------------------------
   const handleEdit = (id) => {
     const target = transfers.find((t) => t.id === id);
-    setEditTransfer(target ? { ...target } : null); // ← statusも含める
+    setEditTransfer(target ? { ...target } : null);
   };
 
   const handleSave = () => {
     if (!editTransfer?.id) return;
+
     axios
       .put(`http://localhost:5000/mails/${editTransfer.id}`, editTransfer)
       .then(() => {
-        const updated = transfers.map((item) =>
-          item.id === editTransfer.id ? editTransfer : item
+        setTransfers((prev) =>
+          prev.map((item) => (item.id === editTransfer.id ? editTransfer : item))
         );
-        setTransfers(updated);
-        setPdfData(updated); // ← ここ忘れず
         setEditTransfer(null);
       })
-
       .catch((err) => console.error('更新に失敗:', err));
   };
 
   const handleDelete = (id) => {
     if (!id) return;
+
     axios
       .delete(`http://localhost:5000/mails/${id}`)
       .then(() => {
-        const updated = transfers.filter((item) => item.id !== id);
-        setTransfers(updated);
-        setPdfData(updated);
+        setTransfers((prev) => prev.filter((item) => item.id !== id));
       })
       .catch((err) => console.error('削除に失敗:', err));
   };
@@ -117,9 +133,6 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       setTransfers((prev) =>
         prev.map((item) => (item.id === id ? { ...item, status: '振込済み' } : item))
       );
-      setPdfData((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, status: '振込済み' } : item))
-      );
     } catch (error) {
       console.error('振込済みへの更新失敗:', error);
     }
@@ -128,19 +141,20 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
   const markAsUnpaid = async (id) => {
     try {
       await axios.patch(`http://localhost:5000/mails/${id}/mark-unpaid`);
-      setTransfers(
-        (prev) => prev.map((item) => (item.id === id ? { ...item, status: '未処理' } : item)) // ← 修正
-      );
-      setPdfData(
-        (prev) => prev.map((item) => (item.id === id ? { ...item, status: '未処理' } : item)) // ← 修正
+      setTransfers((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, status: '未処理' } : item))
       );
     } catch (error) {
       console.error('未処理への更新失敗:', error);
     }
   };
 
+  // ---------------------------
+  // 残高計算（流動口座）
+  // ---------------------------
   const groupLatestByAccountType = (cashRecords, companies, accountType) => {
     const latestByCompany = {};
+
     cashRecords
       .filter((r) => {
         const company = companies.find((c) => c.id === r.company_id);
@@ -160,7 +174,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
       })
       .filter(Boolean);
   };
-  // JSX より上で先に定義する
+
   const grouped = groupLatestByAccountType(cashRecords, companies, '流動');
   const balances = grouped.map(({ company, latest }) => ({
     account_name: `${company.bank_name || ''}（${company.bank_account || ''}）`,
@@ -168,12 +182,45 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
   }));
   const totalCash = grouped.reduce((sum, { latest }) => sum + Number(latest.balance || 0), 0);
 
+  // ---------------------------
+  // 取引先フィルタ（id ベース）
+  // ---------------------------
+  const filteredTransfers = useMemo(() => {
+    if (!selectedClientId) return transfers;
+    const idNum = Number(selectedClientId);
+    return transfers.filter((t) => Number(t.client_id) === idNum);
+  }, [transfers, selectedClientId]);
+
   if (loading) return <p>読み込み中...</p>;
 
+  // ---------------------------
+  // JSX
+  // ---------------------------
   return (
     <div>
-      <h2>振込一覧（{transfers.length}件）</h2>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <h2>振込一覧（{filteredTransfers.length}件）</h2>
 
+        {/* 取引先コンボ（id ベース） */}
+        <div className="d-flex align-items-center" style={{ gap: '8px' }}>
+          <span>取引先で絞り込み:</span>
+          <select
+            className="form-select form-select-sm"
+            style={{ width: '260px' }}
+            value={selectedClientId}
+            onChange={(e) => setSelectedClientId(e.target.value)}
+          >
+            <option value="">（すべての取引先）</option>
+            {clients.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* 編集フォーム */}
       {editTransfer && (
         <div>
           <h3>振込編集</h3>
@@ -282,17 +329,18 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         </div>
       )}
 
+      {/* PDF ボタン（react-pdf の Eo バグ対策で key を付けて都度再マウント） */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: 20 }}>
-        {pdfData.length > 0 && !summaryLoading ? (
+        {filteredTransfers.length > 0 && !summaryLoading ? (
           <>
-            {/* ✅ balances を加工して口座名付きにする */}
-            {companies.length > 0 && summaryData.balances.length > 0 && (
+            {balances.length > 0 && (
               <PDFDownloadLink
+                key={`sum-${startDate}-${endDate}`}
                 document={
                   <SummaryDocument
                     balances={balances}
-                    transfers={summaryData.transfers}
-                    withdrawals={summaryData.withdrawals}
+                    transfers={summaryData.transfers || []}
+                    withdrawals={summaryData.withdrawals || []}
                     totalCash={totalCash}
                     month={month}
                   />
@@ -306,9 +354,19 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
                 )}
               </PDFDownloadLink>
             )}
+
             <PDFDownloadLink
-              document={<TransfersDocument transfers={pdfData} month={month} />}
-              fileName={`振込一覧_${month}.pdf`}
+              key={`trans-${startDate}-${endDate}-${selectedClientId || 'ALL'}-${
+                filteredTransfers.length
+              }`}
+              document={
+                <TransfersDocument
+                  transfers={filteredTransfers}
+                  startDate={startDate}
+                  endDate={endDate}
+                />
+              }
+              fileName={`振込一覧_${startDate}_${endDate}.pdf`}
             >
               {({ loading }) => (
                 <button disabled={loading} className="btn btn-outline-primary btn-sm">
@@ -322,6 +380,7 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
         )}
       </div>
 
+      {/* 一覧テーブル */}
       <table className="table table-bordered">
         <thead className="table-dark">
           <tr>
@@ -338,12 +397,12 @@ const MailListTransfers = ({ month, startDate, endDate, reloadKey }) => {
           </tr>
         </thead>
         <tbody>
-          {transfers.map((item) => (
+          {filteredTransfers.map((item) => (
             <tr key={item.id}>
               <td>{item.received_at ? format(new Date(item.received_at), 'M/dd') : '---'}</td>
               <td>{item.payment_date ? format(new Date(item.payment_date), 'M/dd') : '---'}</td>
               <td>{item.client_name}</td>
-              <td>{item.amount}</td>
+              <td>{item.amount.toLocaleString()}</td>
               <td>{item.bank_account_name}</td>
               <td>{item.description}</td>
               <td>{item.note}</td>

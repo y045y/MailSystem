@@ -1,26 +1,28 @@
+// TransfersDocument.jsx
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 
 Font.register({
   family: 'NotoSansJP',
   src: '/fonts/NotoSansJP-Regular.ttf',
-  fontStyle: 'normal',
 });
 
 const formatDate = (iso) => {
-  const date = new Date(iso);
-  return isNaN(date) ? '―' : `${date.getMonth() + 1}/${date.getDate()}`;
+  const d = new Date(iso);
+  if (isNaN(d)) return '―';
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 };
 
-const formatMonth = (monthStr) => {
-  const [, m] = (monthStr || '').split('-');
-  return `${parseInt(m || '0', 10)}月分`;
+const formatRange = (iso) => {
+  const d = new Date(iso);
+  if (isNaN(d)) return '―';
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 };
 
 const styles = StyleSheet.create({
   page: { padding: 30, fontSize: 10, fontFamily: 'NotoSansJP' },
-  title: { fontSize: 16, marginBottom: 15, textAlign: 'center' },
-  header: {
+  title: { fontSize: 16, textAlign: 'center', marginBottom: 15 },
+  headerRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderColor: '#000',
@@ -32,27 +34,12 @@ const styles = StyleSheet.create({
     borderColor: '#000',
   },
   cell: { padding: 4 },
-  date: { width: '8%' },
-  client: { width: '20%' },
-  amount: { width: '10%', textAlign: 'right' },
+  date: { width: '10%' },
+  client: { width: '25%' },
+  amount: { width: '15%', textAlign: 'right' },
   account: { width: '30%' },
-  note: { width: '27%', fontSize: 7 },
-  noteHeader: {
-    width: '15%',
-    fontSize: 10, // ← 通常サイズ
-    fontWeight: 'bold',
-  },
-
+  note: { width: '15%', fontSize: 7 },
   status: { width: '5%', textAlign: 'center' },
-  subtotal: {
-    paddingTop: 2,
-    paddingBottom: 2,
-    textAlign: 'right',
-    fontWeight: 'bold',
-    borderTopWidth: 0.5,
-    borderBottomWidth: 0.5,
-    borderColor: '#000',
-  },
   summary: {
     marginTop: 20,
     textAlign: 'right',
@@ -61,39 +48,46 @@ const styles = StyleSheet.create({
   },
 });
 
-const groupTransfers = (array) => {
-  return array.reduce((grouped, item) => {
-    const client = item.client_name || '―';
+// 取引先＋口座でグルーピング
+const groupTransfers = (arr) => {
+  return arr.reduce((acc, item) => {
+    const client = item.client_name || '不明';
     const account =
-      item.bank_account_name || `${item.bank_name || ''}（${item.bank_account || '―'}）`;
+      item.bank_account_name ||
+      `${item.bank_name || ''}（${item.bank_account || '―'}）`;
+
     const key = `${client}__${account}`;
-    grouped[key] ??= [];
-    grouped[key].push(item);
-    return grouped;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
   }, {});
 };
 
-const TransfersDocument = ({ transfers = [], month }) => {
+const TransfersDocument = ({ transfers = [], startDate, endDate }) => {
   const list = Array.isArray(transfers)
     ? transfers.filter(
-        (item) =>
-          item &&
-          typeof item.payment_date === 'string' &&
-          !isNaN(new Date(item.payment_date)) &&
-          typeof item.amount !== 'undefined'
+        (t) =>
+          t &&
+          typeof t.payment_date === 'string' &&
+          !isNaN(new Date(t.payment_date)) &&
+          typeof t.amount !== 'undefined'
       )
     : [];
 
-  const monthLabel = formatMonth(month);
   const grouped = groupTransfers(list);
   const total = list.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+  const rangeLabel =
+    startDate && endDate
+      ? `${formatRange(startDate)} ～ ${formatRange(endDate)}`
+      : '';
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>振込一覧帳票（{monthLabel}）</Text>
+        <Text style={styles.title}>振込一覧表（{rangeLabel}）</Text>
 
-        <View style={styles.header}>
+        <View style={styles.headerRow}>
           <Text style={[styles.cell, styles.date]}>支払日</Text>
           <Text style={[styles.cell, styles.client]}>取引先</Text>
           <Text style={[styles.cell, styles.amount]}>金額</Text>
@@ -102,43 +96,38 @@ const TransfersDocument = ({ transfers = [], month }) => {
           <Text style={[styles.cell, styles.status]}>済</Text>
         </View>
 
-        {Object.entries(grouped).map(([groupKey, items], accIdx) => {
-          const [clientName, accountName] = groupKey.split('__');
-          const subtotal = items.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-
-          return (
-            <View key={accIdx}>
-              {items.map((item, i) => (
-                <View style={styles.row} key={`${accIdx}-${i}`}>
-                  <Text style={[styles.cell, styles.date]}>{formatDate(item.payment_date)}</Text>
-                  <Text style={[styles.cell, styles.client]}>{item.client_name}</Text>
-                  <Text style={[styles.cell, styles.amount]}>
-                    {Number(item.amount).toLocaleString()}
-                  </Text>
-                  <Text style={[styles.cell, styles.account]}>
-                    {item.bank_account_name ||
-                      `${item.bank_name || ''}（${item.bank_account || '―'}）`}
-                  </Text>
-                  <Text style={[styles.cell, styles.note]} wrap={false}>
-                    {[item.description, item.note].filter(Boolean).join(' / ') || '―'}
-                  </Text>
-                  <Text style={[styles.cell, styles.status]}>
-                    {item.status === '振込済み' ? '✓' : ''}
-                  </Text>
-                </View>
-              ))}
-
-              {items.length > 1 && (
-                <Text style={styles.subtotal}>
-                  小計（{clientName} / {accountName}）: {subtotal.toLocaleString()} 円
+        {Object.entries(grouped).map(([key, items], idx) => (
+          <View key={idx}>
+            {items.map((item, i) => (
+              <View style={styles.row} key={`${idx}-${i}`}>
+                <Text style={[styles.cell, styles.date]}>
+                  {formatDate(item.payment_date)}
                 </Text>
-              )}
-            </View>
-          );
-        })}
+                <Text style={[styles.cell, styles.client]}>
+                  {item.client_name}
+                </Text>
+                <Text style={[styles.cell, styles.amount]}>
+                  {Number(item.amount).toLocaleString()}
+                </Text>
+                <Text style={[styles.cell, styles.account]}>
+                  {item.bank_account_name ||
+                    `${item.bank_name || ''}（${item.bank_account || '―'}）`}
+                </Text>
+                <Text style={[styles.cell, styles.note]}>
+                  {[item.description, item.note]
+                    .filter(Boolean)
+                    .join(' / ') || '―'}
+                </Text>
+                <Text style={[styles.cell, styles.status]}>
+                  {item.status === '振込済み' ? '✓' : ''}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ))}
 
         <Text style={styles.summary}>
-          {list.length} 件 合計: {total.toLocaleString()} 円
+          {list.length} 件　合計: {total.toLocaleString()} 円
         </Text>
       </Page>
     </Document>

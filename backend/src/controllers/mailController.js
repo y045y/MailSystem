@@ -99,6 +99,7 @@ exports.getTransferList = async (req, res) => {
       `
       SELECT
         m.id,
+        m.client_id,                -- ★ 追加
         m.received_at,
         m.payment_date,
         m.type,
@@ -133,6 +134,7 @@ exports.getTransferList = async (req, res) => {
     });
   }
 };
+
 
 
 // 引落一覧取得（日付範囲指定対応）
