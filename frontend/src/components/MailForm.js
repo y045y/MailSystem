@@ -143,164 +143,167 @@ const MailForm = ({ onReload }) => {
       });
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="mail-form p-3">
-      <div className="row g-3 align-items-end">
-        {/* 確認日 */}
-        <div className="col-auto">
-          <label className="form-label">確認日:</label>
-          <input
-            type="date"
-            name="received_at"
-            value={formData.received_at}
-            onChange={handleChange}
-            className="form-control"
-            required
-          />
-        </div>
+return (
+  <form onSubmit={handleSubmit} className="mail-form p-3">
+    <div className="row g-3 align-items-end">
+      {/* 受取日 */}
+      <div className="col-auto">
+        <label className="form-label">受取日:</label>
+        <input
+          type="date"
+          name="received_at"
+          value={formData.received_at}
+          onChange={handleChange}
+          className="form-control form-control-sm"
+          required
+        />
+      </div>
 
-        {/* 取引先キーワード（短く） */}
-        <div className="col-auto">
-          <label className="form-label">取引先キーワード</label>
-          <input
-            type="text"
-            className="form-control form-control-sm"
-            placeholder="検索"
-            value={clientFilter}
-            onChange={(e) => setClientFilter(e.target.value)}
-            style={{ width: '120px' }}
-          />
-        </div>
+      {/* 取引先キーワード */}
+      <div className="col-auto">
+        <label className="form-label">取引先キーワード:</label>
+        <input
+          type="text"
+          className="form-control form-control-sm"
+          placeholder="検索"
+          value={clientFilter}
+          onChange={(e) => setClientFilter(e.target.value)}
+          style={{ width: '120px' }}
+        />
+      </div>
 
-        {/* 取引先コンボ（フィルタ反映 & 幅150px） */}
+      {/* 取引先 */}
+      <div className="col-auto">
+        <label className="form-label">取引先:</label>
+        <select
+          name="sender"
+          value={formData.sender}
+          onChange={handleChange}
+          className="form-select form-select-sm"
+          required
+          style={{ width: '180px' }}
+        >
+          <option value="">選択可</option>
+          {filteredClients.map((client) => (
+            <option key={client.id} value={client.id}>
+              {client.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 金額 */}
+      <div className="col-auto">
+        <label className="form-label">金額:</label>
+        <input
+          type="number"
+          name="amount"
+          value={formData.amount}
+          onChange={handleChange}
+          className="form-control form-control-sm text-end"
+          min="0"
+          required={
+            formData.type === '振込' ||
+            formData.type === '引落' ||
+            formData.type === 'カードの請求書'
+          }
+          style={{ width: '120px' }}
+        />
+      </div>
+
+      {/* 支払日 */}
+      <div className="col-auto">
+        <label className="form-label">支払日:</label>
+        <input
+          type="date"
+          name="payment_date"
+          value={formData.payment_date}
+          onChange={handleChange}
+          className="form-control form-control-sm"
+        />
+      </div>
+
+      {/* 区分 */}
+      <div className="col-auto">
+        <label className="form-label">区分:</label>
+        <select
+          name="type"
+          value={formData.type}
+          onChange={handleChange}
+          className="form-select form-select-sm"
+          required
+          style={{ width: '110px' }}
+        >
+          <option value="">選択可</option>
+          <option value="引落">引落</option>
+          <option value="振込">振込</option>
+          <option value="通知">通知</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      {/* 振込・引落口座 */}
+      {(formData.type === '振込' ||
+        formData.type === '引落' ||
+        formData.type === 'カードの請求書') && (
         <div className="col-auto">
-          <label className="form-label">取引先:</label>
+          <label className="form-label">振込・引落口座:</label>
           <select
-            name="sender"
-            value={formData.sender}
+            name="bank_account_id"
+            value={formData.bank_account_id}
             onChange={handleChange}
             className="form-select form-select-sm"
             required
-            style={{ width: '150px' }}
+            style={{ width: '240px' }}
           >
             <option value="">選択可</option>
-            {filteredClients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.name}
+            {bankAccounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
               </option>
             ))}
           </select>
         </div>
+      )}
 
-        {/* 郵便種別 */}
-        <div className="col-auto">
-          <label className="form-label">郵便種別:</label>
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="form-select form-select-sm"
-          >
-            <option value="">選択可</option>
-            <option value="引落">引落</option>
-            <option value="振込">振込</option>
-            <option value="通知">通知</option>
-            <option value="その他">その他</option>
-          </select>
-        </div>
+      {/* 内容・費目 */}
+      <div className="col-12 col-md-4">
+        <label className="form-label">内容・費目:</label>
+        <input
+          type="text"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          className="form-control form-control-sm"
+        />
+      </div>
 
-        {/* 振込・引落口座 */}
-        {(formData.type === '振込' ||
-          formData.type === '引落' ||
-          formData.type === 'カードの請求書') && (
-          <div className="col-auto">
-            <label className="form-label">振込・引落口座:</label>
-            <select
-              name="bank_account_id"
-              value={formData.bank_account_id}
-              onChange={handleChange}
-              className="form-select form-select-sm"
-              required
-            >
-              <option value="">選択可</option>
-              {bankAccounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* 期限日 */}
-        <div className="col-auto">
-          <label className="form-label">期限日:</label>
-          <input
-            type="date"
-            name="payment_date"
-            value={formData.payment_date}
-            onChange={handleChange}
-            className="form-control form-control-sm"
-          />
-        </div>
-
-        {/* 金額 */}
-        <div className="col-auto">
-          <label className="form-label">金額:</label>
-          <input
-            type="number"
-            name="amount"
-            value={formData.amount}
-            onChange={handleChange}
-            className="form-control form-control-sm"
-            required={
-              formData.type === '振込' ||
-              formData.type === '引落' ||
-              formData.type === 'カードの請求書'
-            }
-          />
-        </div>
-
-        {/* 説明 */}
-        <div className="col-12 col-md-3">
-          <label className="form-label">説明:</label>
+      {/* メモ + 登録ボタン */}
+      <div className="col-12 d-flex align-items-end">
+        <div className="flex-grow-1 me-2">
+          <label className="form-label">メモ:</label>
           <input
             type="text"
-            name="description"
-            value={formData.description}
+            name="note"
+            value={formData.note}
             onChange={handleChange}
-            className="form-control"
+            className="form-control form-control-sm"
           />
         </div>
 
-        {/* メモ + 送信ボタン横並び */}
-        <div className="col-12 d-flex align-items-end">
-          {/* メモ */}
-          <div className="flex-grow-1 me-2">
-            <label className="form-label">メモ:</label>
-            <input
-              type="text"
-              name="note"
-              value={formData.note}
-              onChange={handleChange}
-              className="form-control"
-            />
-          </div>
-
-          {/* 送信ボタン */}
-          <div className="pb-1">
-            <button
-              type="submit"
-              className="btn btn-secondary"
-              style={{ width: '160px' }}
-            >
-              送信
-            </button>
-          </div>
+        <div className="pb-1">
+          <button
+            type="submit"
+            className="btn btn-secondary"
+            style={{ width: '160px' }}
+          >
+            登録
+          </button>
         </div>
       </div>
-    </form>
-  );
+    </div>
+  </form>
+);
 };
 
 export default MailForm;
