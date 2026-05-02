@@ -7,7 +7,8 @@ const sequelize = require('./config/database');
 const mailRoutes = require('./routes/mailRoutes');
 const clientRoutes = require('./routes/clientsRoutes');
 const companyRoutes = require('./routes/companyRoutes');
-const cashRoutes = require('./routes/cashRoutes'); // ✅ 追加！
+const cashRoutes = require('./routes/cashRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,7 @@ app.use('/mails', mailRoutes); // 郵便物関連
 app.use('/clients', clientRoutes); // 取引先マスタ
 app.use('/company-master', companyRoutes); // 自社マスタ
 app.use('/cash-records', cashRoutes); // ✅ キャッシュ管理ルート
+app.use('/categories', categoryRoutes);
 
 // ✅ DB同期
 sequelize

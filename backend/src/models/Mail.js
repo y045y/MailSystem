@@ -78,7 +78,6 @@ const Mail = sequelize.define(
         isIn: [['未処理', '振込済み']],
       },
     },
-    
 
     // 外部キー：取引先ID
     client_id: {
@@ -88,6 +87,11 @@ const Mail = sequelize.define(
         model: Client,
         key: 'id',
       },
+    },
+
+    category_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
 
     // 外部キー：会社口座ID（company_masterのID）

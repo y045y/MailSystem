@@ -27,6 +27,7 @@ const MailForm = ({ onReload }) => {
     amount: '',
     description: '',
     note: '',
+    category_id: '',
     status: '未処理',
     bank_account_id: '',
   });
@@ -34,6 +35,7 @@ const MailForm = ({ onReload }) => {
   const [clients, setClients] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [clientFilter, setClientFilter] = useState('');
+  const [categories, setCategories] = useState([]);
 
   // 取引先マスタ取得
   useEffect(() => {
@@ -52,6 +54,13 @@ const MailForm = ({ onReload }) => {
       return name.includes(keyword);
     });
   }, [clients, clientFilter]);
+  //費目取得
+  useEffect(() => {
+    axios
+      .get('http://localhost:5000/categories')
+      .then((res) => setCategories(res.data))
+      .catch((err) => console.error('費目取得失敗:', err));
+  }, []);
 
   // 口座情報取得
   useEffect(() => {
@@ -113,6 +122,21 @@ const MailForm = ({ onReload }) => {
       [name]: value,
     }));
   };
+  const handleTypeChange = (e) => {
+    const newType = e.target.value;
+
+    setFormData((prev) => ({
+      ...prev,
+      type: newType,
+      sender: '',
+      bank_account_id: '',
+      amount: '',
+      payment_date: '',
+    }));
+
+    setClientFilter('');
+    setBankAccounts([]);
+  };
 
   // 送信
   const handleSubmit = (e) => {
@@ -123,6 +147,7 @@ const MailForm = ({ onReload }) => {
       received_at: formData.received_at || null,
       payment_date: formData.payment_date || null,
       amount: formData.amount ? parseFloat(formData.amount) : 0,
+      category_id: formData.category_id ? parseInt(formData.category_id, 10) : null,
       description: formData.description || '',
       note: formData.note || '',
       status: formData.status,
@@ -141,6 +166,7 @@ const MailForm = ({ onReload }) => {
           payment_date: '',
           amount: '',
           description: '',
+          category_id: '',
           note: '',
           status: '未処理',
           bank_account_id: '',
@@ -153,34 +179,35 @@ const MailForm = ({ onReload }) => {
         console.error('送信エラー:', error);
       });
   };
+  const isPaymentType = formData.type === '振込' || formData.type === '引落';
 
   return (
-    <form onSubmit={handleSubmit} className="mail-form p-3">
-      <div className="row g-3 align-items-end">
-        {/* 受取日 */}
-        <div className="col-auto">
-          <label className="form-label">受取日:</label>
+    <form onSubmit={handleSubmit} className="mail-form card-form">
+      {/* 1行目：基本項目 */}
+      <div className="form-line">
+        <div className="form-item">
+          <label className="form-label">受取日</label>
           <input
             type="date"
             name="received_at"
             value={formData.received_at}
             onChange={handleChange}
-            className="form-control form-control-sm"
+            className="form-control form-sm w-date"
             required
           />
         </div>
-        {/* 区分 */}
-        <div className="col-auto">
-          <label className="form-label">区分:</label>
+
+        <div className="form-item">
+          <label className="form-label">区　分</label>
           <select
+            id="type"
             name="type"
             value={formData.type}
-            onChange={handleChange}
-            className="form-select form-select-sm"
+            onChange={handleTypeChange}
+            className="form-select form-sm w-type"
             required
-            style={{ width: '110px' }}
           >
-            <option value="">選択可</option>
+            <option value="">選択</option>
             <option value="引落">引落</option>
             <option value="振込">振込</option>
             <option value="通知">通知</option>
@@ -188,17 +215,25 @@ const MailForm = ({ onReload }) => {
           </select>
         </div>
 
-        {/* 取引先 */}
-        <div className="col-auto">
-          <label className="form-label">取引先:</label>
+        <div className="form-item">
+          <label className="form-label">取引先</label>
           <input
             type="text"
-            list="client-list"
+            list={formData.type ? 'client-list' : undefined}
             value={
               clients.find((client) => String(client.id) === String(formData.sender))?.name ||
               clientFilter
             }
+            onFocus={(e) => {
+              if (!formData.type) {
+                e.target.blur();
+                document.getElementById('type')?.focus();
+              }
+            }}
+            readOnly={!formData.type}
             onChange={(e) => {
+              if (!formData.type) return;
+
               const inputValue = e.target.value;
               setClientFilter(inputValue);
 
@@ -210,102 +245,100 @@ const MailForm = ({ onReload }) => {
                 bank_account_id: '',
               }));
             }}
-            className="form-control form-control-sm"
-            placeholder="取引先名を入力"
+            className="form-control form-sm w-client"
+            placeholder={formData.type ? '入力' : '区分先に選択'}
             required
-            style={{ width: '220px' }}
           />
-
           <datalist id="client-list">
-            {clients.map((client) => (
+            {filteredClients.map((client) => (
               <option key={client.id} value={client.name} />
             ))}
           </datalist>
         </div>
 
-        {(formData.type === '振込' || formData.type === '引落') && (
-          <>
-            {/* 金額 */}
-            <div className="col-auto">
-              <label className="form-label">金額:</label>
-              <input
-                type="number"
-                name="amount"
-                value={formData.amount}
-                onChange={handleChange}
-                className="form-control form-control-sm text-end"
-                min="0"
-                required
-                style={{ width: '120px' }}
-              />
-            </div>
-
-            {/* 支払日 */}
-            <div className="col-auto">
-              <label className="form-label">支払日:</label>
-              <input
-                type="date"
-                name="payment_date"
-                value={formData.payment_date}
-                onChange={handleChange}
-                className="form-control form-control-sm"
-                required
-              />
-            </div>
-
-            {/* 振込・引落口座 */}
-            <div className="col-auto">
-              <label className="form-label">振込・引落口座:</label>
-              <select
-                name="bank_account_id"
-                value={formData.bank_account_id}
-                onChange={handleChange}
-                className="form-select form-select-sm"
-                required
-                style={{ width: '240px' }}
-              >
-                <option value="">選択可</option>
-                {bankAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
-        {/* 内容・費目 */}
-        <div className="col-12 col-md-4">
-          <label className="form-label">内容・費目:</label>
-          <input
-            type="text"
-            name="description"
-            value={formData.description}
+        <div className="form-item">
+          <label className="form-label">費目</label>
+          <select
+            name="category_id"
+            value={formData.category_id}
             onChange={handleChange}
-            className="form-control form-control-sm"
+            className="form-select form-sm w-category"
             required
+          >
+            <option value="">選択</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* 2行目：支払系項目 */}
+      <div className="form-line">
+        <div className="form-item">
+          <label className="form-label">金　額 </label>
+          <input
+            type="number"
+            name="amount"
+            value={formData.amount}
+            onChange={handleChange}
+            className="form-control form-sm w-amount"
+            disabled={!isPaymentType}
+            required={isPaymentType}
           />
         </div>
 
-        {/* メモ + 登録ボタン */}
-        <div className="col-12 d-flex align-items-end">
-          <div className="flex-grow-1 me-2">
-            <label className="form-label">メモ:</label>
-            <input
-              type="text"
-              name="note"
-              value={formData.note}
-              onChange={handleChange}
-              className="form-control form-control-sm"
-            />
-          </div>
-
-          <div className="pb-1">
-            <button type="submit" className="btn btn-secondary" style={{ width: '160px' }}>
-              登録
-            </button>
-          </div>
+        <div className="form-item">
+          <label className="form-label">支払日</label>
+          <input
+            type="date"
+            name="payment_date"
+            value={formData.payment_date}
+            onChange={handleChange}
+            className="form-control form-sm w-date"
+            disabled={!isPaymentType}
+            required={isPaymentType}
+          />
         </div>
+
+        <div className="form-item">
+          <label className="form-label">口　座</label>
+          <select
+            name="bank_account_id"
+            value={formData.bank_account_id}
+            onChange={handleChange}
+            className="form-select form-sm w-bank"
+            disabled={!isPaymentType}
+            required={isPaymentType}
+          >
+            <option value="">選択</option>
+            {bankAccounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* 3行目：メモ + 登録 */}
+      <div className="form-line form-line-bottom">
+        <div className="form-item form-note">
+          <label className="form-label">メ　 モ</label>
+          <input
+            type="text"
+            name="note"
+            value={formData.note}
+            onChange={handleChange}
+            className="form-control form-sm"
+          />
+        </div>
+
+        <button type="submit" className="btn btn-primary btn-submit">
+          登録
+        </button>
       </div>
     </form>
   );

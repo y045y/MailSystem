@@ -1,95 +1,102 @@
-MailForm.css
+/* MailForm.css */
 
-/* フォーム全体のスタイル */
-.mail-form {
-    max-width: 600px;              /* 最大幅を設定 */
-    margin: 0 auto;                /* 水平中央揃え */
-    padding: 20px;                 /* 内部の余白 */
-    border: 1px solid #ddd;        /* 薄いボーダー */
-    border-radius: 8px;            /* 角を丸く */
-    background-color: #f8f9fa;     /* 背景色 */
-  }
-  
-  /* ラベルのスタイル */
-  .mail-form .form-label {
-    font-weight: bold;             /* ラベル文字を太字に */
-    margin-bottom: 50px;            /* ラベルと入力フィールドの間隔 */
-    color: #495057;                /* 色を少し濃い目に */
-  }
-  
-/* ラベル用のスタイル：入力欄の左上に配置し、余白を最小限に */
-.mail-form .form-label {
-  display: block;           /* ラベルをブロック要素にして改行 */
-  margin-bottom: 4px;       /* 入力との間隔を縮める */
-  text-align: left;         /* 左寄せ */
-  font-weight: 500;         /* 適度な太さ */
-  font-size: 0.9rem;        /* フォントサイズの調整 */
+.card-form {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  border: 1px solid #cfd4da;
+  border-radius: 6px;
+  background: #f8f9fa;
 }
 
-/* 入力フィールド・セレクトボックスのスタイル */
-.mail-form .form-control,
-.mail-form .form-select {
-  height: 38px;             /* 統一の高さ */
-  padding: 6px 12px;        /* 上下に6px、左右に12pxのパディング */
-  margin-bottom: 15px;      /* 下のフィールドとの間隔 */
-  border-radius: 4px;       /* 角丸 */
-  box-sizing: border-box;   /* パディング込みで高さ計算 */
+.form-line {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
 }
 
-/* type="date" の入力も同様に調整（左右パディングを追加） */
-.mail-form input[type="date"] {
-  height: 38px;
-  padding: 6px 12px;
-  line-height: 1.5;
-  box-sizing: border-box;
+.form-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-  
-  /* フォームの各行のスタイル */
-  .mail-form .mb-3 {
-    margin-bottom: 1.5rem;         /* 各フィールドの間隔を少し広めに */
-  }
-  
-  /* ボタンのスタイル */
-  .mail-form .btn {
-    background-color: #007bff;     /* ボタン背景色 */
-    color: white;                  /* ボタン文字色 */
-    padding: 10px 20px;            /* ボタンの内側の余白 */
-    border: none;                  /* ボーダーなし */
-    border-radius: 4px;            /* 角を丸く */
-    font-size: 16px;                /* 文字サイズ */
-    cursor: pointer;               /* カーソルをポインタに */
-    transition: background-color 0.3s; /* 背景色の遷移効果 */
-  }
-  
-  /* ボタンのホバー効果 */
-  .mail-form .btn:hover {
-    background-color: #0056b3;     /* ホバー時の色 */
-  }
-  
-  /* メッセージ入力欄のスタイル */
-  .mail-form .form-text {
-    font-size: 0.875rem;           /* メッセージの文字サイズ */
-    color: #6c757d;                /* 色を少し薄く */
-    margin-top: 5px;                /* 上の余白 */
-  }
-  
-  /* レスポンシブデザイン */
-  @media (max-width: 768px) {
-    .mail-form {
-      width: 100%;                  /* 小さな画面では幅100% */
-      padding: 15px;                /* 小さくするためにパディングを調整 */
-      grid-template-columns: 1fr;   /* 1列表示に変更 */
-    }
-  
-    .mail-form .form-control,
-    .mail-form .form-select {
-      padding: 8px;                 /* 入力フィールドのパディング */
-    }
-  }
-  input[type="date"].form-control {
-    height: 38px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-  }
-  
+.form-label {
+  margin-bottom: 0;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.form-sm {
+  height: 42px;
+  padding: 6px 10px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 4px;
+}
+
+.w-date {
+  width: 160px;
+}
+
+.w-type {
+  width: 160px;
+}
+
+.w-client {
+  width: 260px;
+}
+
+.w-category {
+  width: 180px;
+}
+
+.w-amount {
+  width: 160px;
+  text-align: right;
+}
+
+.w-bank {
+  width: 260px;
+}
+
+.form-line-bottom {
+  margin-bottom: 0;
+}
+
+.form-note {
+  flex: 1;
+}
+
+.form-note input {
+  width: 90%;
+}
+
+.btn-submit {
+  height: 42px;
+  width: 160px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.card-form .form-control:disabled,
+.card-form .form-select:disabled,
+.card-form input[readonly] {
+  background-color: #e9ecef;
+  opacity: 0.95;
+  cursor: not-allowed;
+}
+.top-menu-btn {
+  width: 260px;
+  height: 44px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.top-menu-btn.active {
+  background-color: #0d6efd;
+  color: white;
+}

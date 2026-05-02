@@ -78,17 +78,32 @@ const App = () => {
       <h1>郵便物管理システム</h1>
       {/* タブ切り替え */}
       <div className="mb-4 d-flex justify-content-center">
-        <div className="d-flex flex-wrap gap-2 justify-content-center">
-          <button onClick={() => setSelectedTab('mail')} className="btn btn-secondary">
+        <div className="d-flex justify-content-center gap-3 flex-wrap">
+          <button
+            onClick={() => setSelectedTab('mail')}
+            className={`btn btn-secondary top-menu-btn ${selectedTab === 'mail' ? 'active' : ''}`}
+          >
             郵便物
           </button>
-          <button onClick={() => setSelectedTab('client')} className="btn btn-secondary">
+
+          <button
+            onClick={() => setSelectedTab('client')}
+            className={`btn btn-secondary top-menu-btn ${selectedTab === 'client' ? 'active' : ''}`}
+          >
             取引先マスタ
           </button>
-          <button onClick={() => setSelectedTab('company')} className="btn btn-secondary">
+
+          <button
+            onClick={() => setSelectedTab('company')}
+            className={`btn btn-secondary top-menu-btn ${selectedTab === 'company' ? 'active' : ''}`}
+          >
             自社マスタ
           </button>
-          <button onClick={() => setSelectedTab('cash')} className="btn btn-secondary">
+
+          <button
+            onClick={() => setSelectedTab('cash')}
+            className={`btn btn-secondary top-menu-btn ${selectedTab === 'cash' ? 'active' : ''}`}
+          >
             キャッシュ
           </button>
         </div>
@@ -169,7 +184,7 @@ const App = () => {
             startDate={startDate}
             endDate={endDate}
             reloadKey={reloadKey}
-            selectedClientId={selectedClientId} 
+            selectedClientId={selectedClientId}
           />
           <MailListNotices
             month={selectedMonth}

@@ -19,18 +19,17 @@ exports.createMail = async (req, res) => {
   try {
     console.log('📩 Received Data:', req.body);
 
-    // ストアドプロシージャを実行
     const result = await sequelize.query(
-      `EXEC InsertMailRecord 
-        @received_at=:received_at, 
-        @client_id=:client_id, 
-        @type=:type, 
-        @payment_date=:payment_date, 
-        @bank_account_id=:bank_account_id, 
-        @amount=:amount, 
-        @description=:description, 
-        @note=:note, 
-        @status=:status, 
+      `EXEC InsertMailRecord
+        @received_at=:received_at,
+        @client_id=:client_id,
+        @type=:type,
+        @payment_date=:payment_date,
+        @bank_account_id=:bank_account_id,
+        @amount=:amount,
+        @category_id=:category_id,
+        @note=:note,
+        @status=:status,
         @created_at=:created_at`,
       {
         replacements: {
@@ -39,8 +38,8 @@ exports.createMail = async (req, res) => {
           type: req.body.type,
           payment_date: formatDate(req.body.payment_date),
           bank_account_id: req.body.bank_account_id || null,
-          amount: req.body.amount,
-          description: req.body.description || null,
+          amount: req.body.amount || null,
+          category_id: req.body.category_id || null,
           note: req.body.note || null,
           status: req.body.status || '未処理',
           created_at: formatDateTime(new Date()),
@@ -59,7 +58,6 @@ exports.createMail = async (req, res) => {
     });
   }
 };
-
 // 📩 郵便物一覧を取得 (GET /mails)
 exports.getMails = async (req, res) => {
   try {
@@ -135,8 +133,6 @@ exports.getTransferList = async (req, res) => {
   }
 };
 
-
-
 // 引落一覧取得（日付範囲指定対応）
 exports.getWithdrawalList = async (req, res) => {
   const { startDate, endDate } = req.query;
@@ -184,7 +180,6 @@ exports.getWithdrawalList = async (req, res) => {
     });
   }
 };
-
 
 // 通知一覧取得（日付範囲指定）
 exports.getNoticeList = async (req, res) => {
@@ -308,7 +303,6 @@ exports.updateMail = async (req, res) => {
     mail.description = typeof description !== 'undefined' ? description : mail.description;
     mail.note = typeof note !== 'undefined' ? note : mail.note;
     mail.status = typeof status !== 'undefined' ? status : mail.status;
-    
 
     // 保存
     await mail.save(); // データベースの更新
@@ -494,5 +488,3 @@ exports.markAsUnpaid = async (req, res) => {
     res.status(500).json({ error: 'サーバーエラー' });
   }
 };
-
-
