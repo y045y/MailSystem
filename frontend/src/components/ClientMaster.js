@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import '../styles/FormCommon.css';
+import '../styles/TableCommon.css';
+import '../styles/ClientMaster.css';
 
 const ClientMaster = () => {
   const [clients, setClients] = useState([]);
@@ -10,180 +12,159 @@ const ClientMaster = () => {
     name: '',
     bank_name: '',
     bank_account: '',
-    withdrawal_company_id: null,
-
+    withdrawal_company_id: '',
   };
 
   const [form, setForm] = useState(initialForm);
-  const [editClient, setEditClient] = useState(null);
 
+  // ===== ref（Enter移動用） =====
+  const nameRef = useRef();
+  const bankRef = useRef();
+  const accountRef = useRef();
+  const companyRef = useRef();
+
+  // ===== 初期取得 =====
   useEffect(() => {
     fetchClients();
-  }, []);
-
-  const fetchClients = async () => {
-    try {
-      const res = await axios.get('http://localhost:5000/clients');
-      setClients(res.data);
-    } catch (err) {
-      console.error('取引先一覧取得失敗:', err);
-    }
-  };
-
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const res = await axios.get('http://localhost:5000/company-master');
-        setCompanies(res.data);
-      } catch (err) {
-        console.error('自社情報の取得失敗:', err);
-      }
-    };
     fetchCompanies();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (editClient) {
-      setEditClient({ ...editClient, [name]: value });
-    } else {
-      setForm({ ...form, [name]: value });
+  const fetchClients = async () => {
+    const res = await axios.get('http://localhost:5000/clients');
+    setClients(res.data);
+  };
+
+  const fetchCompanies = async () => {
+    const res = await axios.get('http://localhost:5000/company-master');
+    setCompanies(res.data);
+  };
+
+  // ===== Enter移動 =====
+  const handleEnter = (e, nextRef) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+
+      if (e.ctrlKey) {
+        handleSubmit();
+        return;
+      }
+
+      nextRef?.current?.focus();
     }
   };
 
-  const getFormData = (source) => ({
-    ...source,
-    withdrawal_company_id:
-      source.withdrawal_company_id === '' || source.withdrawal_company_id === null
-        ? null
-        : Number(source.withdrawal_company_id),
-  });
-  
+  // ===== 入力変更 =====
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
+  // ===== 登録 =====
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const raw = editClient || form;
-    const data = getFormData(raw);
+    if (e) e.preventDefault();
 
-    if (!data.name.trim()) {
-      alert('取引先名は必須です');
+    if (!form.name.trim()) {
+      alert('取引先名必須');
+      nameRef.current.focus();
       return;
     }
 
-    try {
-      if (editClient) {
-        await axios.put(`http://localhost:5000/clients/${editClient.id}`, data);
-        setEditClient(null);
-      } else {
-        await axios.post('http://localhost:5000/clients', data);
-        setForm(initialForm);
-      }
-      fetchClients();
-    } catch (err) {
-      console.error('登録/更新失敗:', err);
-    }
+    const payload = {
+      ...form,
+      withdrawal_company_id: form.withdrawal_company_id ? Number(form.withdrawal_company_id) : null,
+    };
+
+    await axios.post('http://localhost:5000/clients', payload);
+
+    setForm(initialForm);
+    fetchClients();
+    nameRef.current.focus();
   };
 
-  const handleEdit = (client) => {
-    setEditClient({
-      ...client,
-      withdrawal_company_id: client.withdrawal_company_id?.toString() || '',
-    });
-  };
-
+  // ===== 削除 =====
   const handleDelete = async (id) => {
-    if (!window.confirm('本当に削除しますか？')) return;
-    try {
-      await axios.delete(`http://localhost:5000/clients/${id}`);
-      fetchClients();
-    } catch (err) {
-      console.error('削除失敗:', err);
-    }
+    if (!window.confirm('削除する？')) return;
+    await axios.delete(`http://localhost:5000/clients/${id}`);
+    fetchClients();
   };
 
   return (
-    <div className="container py-4">
-      <h2 className="mb-4">取引先マスタ</h2>
+    <div>
+      {/* ===== 入力フォーム ===== */}
+      <form onSubmit={handleSubmit} className="form-card client-form">
+        <div className="form-line">
+          <div className="form-item">
+            <label className="form-label">取引先</label>
+            <input
+              ref={nameRef}
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              onKeyDown={(e) => handleEnter(e, bankRef)}
+              className="form-control form-sm w-client"
+            />
+          </div>
 
-      <form onSubmit={handleSubmit} className="row g-2 mb-4 align-items-end">
-        <div className="col-auto">
-          <label className="form-label">取引先名</label>
-          <input
-            name="name"
-            value={(editClient ? editClient.name : form.name) ?? ''}
-            onChange={handleChange}
-            className="form-control"
-            required
-          />
-        </div>
-        <div className="col-auto">
-          <label className="form-label">銀行名</label>
-          <input
-            name="bank_name"
-            value={(editClient ? editClient.bank_name : form.bank_name) ?? ''}
-            onChange={handleChange}
-            className="form-control"
-            placeholder="空欄可"
-          />
-        </div>
-        <div className="col-auto">
-          <label className="form-label">口座番号</label>
-          <input
-            name="bank_account"
-            value={(editClient ? editClient.bank_account : form.bank_account) ?? ''}
-            onChange={handleChange}
-            className="form-control"
-            placeholder="空欄可"
-          />
-        </div>
-        <div className="col-auto">
-          <label className="form-label">引落口座（自社）</label>
-          <select
-            name="withdrawal_company_id"
-            value={
-              (editClient
-                ? editClient.withdrawal_company_id
-                : form.withdrawal_company_id) ?? ''
-            }
-            onChange={handleChange}
-            className="form-select"
-          >
-            <option value="">自社口座を選択</option>
-            {companies.map((company) => (
-              <option key={company.id} value={company.id.toString()}>
-                {company.bank_name}（{company.bank_account}）
-              </option>
-            ))}
-          </select>
+          <div className="form-item">
+            <label className="form-label">銀行</label>
+            <input
+              ref={bankRef}
+              name="bank_name"
+              value={form.bank_name}
+              onChange={handleChange}
+              onKeyDown={(e) => handleEnter(e, accountRef)}
+              className="form-control form-sm w-type"
+            />
+          </div>
 
-        </div>
-        <div className="col-auto">
-          <button type="submit" className="btn btn-secondary">
-            {editClient ? '保存' : '取引先追加'}
-          </button>
-          {editClient && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditClient(null);
-                setForm(initialForm);
-              }}
-              className="btn btn-outline-secondary ms-2"
+          <div className="form-item">
+            <label className="form-label">口座</label>
+            <input
+              ref={accountRef}
+              name="bank_account"
+              value={form.bank_account}
+              onChange={handleChange}
+              onKeyDown={(e) => handleEnter(e, companyRef)}
+              className="form-control form-sm w-type"
+            />
+          </div>
+
+          <div className="form-item">
+            <label className="form-label">引落口座</label>
+            <select
+              ref={companyRef}
+              name="withdrawal_company_id"
+              value={form.withdrawal_company_id}
+              onChange={handleChange}
+              onKeyDown={(e) => handleEnter(e)}
+              className="form-select form-sm w-bank"
             >
-              キャンセル
-            </button>
-          )}
+              <option value="">選択</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.bank_name}（{c.bank_account}）
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-submit">
+            登録
+          </button>
         </div>
+
+        <div className="form-help">Enter：次 / Ctrl+Enter：登録</div>
       </form>
 
-      <table className="table table-bordered">
+      {/* ===== 一覧 ===== */}
+      <table className="table table-bordered table-sm align-middle table-common">
         <thead className="table-dark">
           <tr>
-            <th>取引先名</th>
-            <th>銀行名</th>
-            <th>口座番号</th>
-            <th>自社口座</th>
-            <th>操作</th>
+            <th>取引先</th>
+            <th>銀行</th>
+            <th>口座</th>
+            <th>引落口座</th>
+            <th>削除</th>
           </tr>
         </thead>
         <tbody>
@@ -198,9 +179,6 @@ const ClientMaster = () => {
                   : '―'}
               </td>
               <td>
-                <button className="btn btn-sm btn-secondary  me-2" onClick={() => handleEdit(c)}>
-                  修正
-                </button>
                 <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c.id)}>
                   削除
                 </button>

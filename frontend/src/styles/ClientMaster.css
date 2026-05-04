@@ -1,0 +1,17 @@
+.client-form .w-client {
+  width: 180px;
+}
+
+.client-form .w-type {
+  width: 190px;
+}
+
+.client-form .w-bank {
+  width: 160px;
+}
+.client-form .btn-submit {
+  width: 120px;
+}
+.client-form .form-line {
+  gap: 10px;
+}

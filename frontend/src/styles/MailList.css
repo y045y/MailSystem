@@ -1,0 +1,171 @@
+MailList.css
+
+/* =========================
+   一覧タイトル
+========================= */
+
+.list-title {
+  margin-top: 10px;
+  margin-bottom: 6px;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.list-title span {
+  font-size: 16px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* =========================
+   フィルタ
+========================= */
+
+.transfer-filter-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-bottom: 6px;
+  background: #f1f3f5;
+  border-radius: 6px;
+}
+
+.transfer-filter-line span {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.transfer-filter-line .form-control,
+.transfer-filter-line .form-select {
+  height: 42px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* =========================
+   テーブル
+========================= */
+
+.mail-table {
+  table-layout: fixed;
+  width: 100%;
+  font-size: 16px;
+}
+
+.mail-table th {
+  background: #212529;
+  color: #fff;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mail-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 区分 */
+.mail-table th:nth-child(1),
+.mail-table td:nth-child(1) {
+  width: 55px;
+}
+
+/* 受取日 */
+.mail-table th:nth-child(2),
+.mail-table td:nth-child(2) {
+  width: 65px;
+}
+
+/* 支払日 */
+.mail-table th:nth-child(3),
+.mail-table td:nth-child(3) {
+  width: 65px;
+}
+
+/* 取引先 */
+.mail-table th:nth-child(4),
+.mail-table td:nth-child(4) {
+  width: 240px;
+}
+
+/* 費目 */
+.mail-table th:nth-child(5),
+.mail-table td:nth-child(5) {
+  width: 70px;
+}
+
+/* 金額 */
+.mail-table th:nth-child(6),
+.mail-table td:nth-child(6) {
+  width: 85px;
+  text-align: right;
+}
+
+/* 口座 */
+.mail-table th:nth-child(7),
+.mail-table td:nth-child(7) {
+  width: 250px;
+}
+
+/* 説明 */
+.mail-table th:nth-child(8),
+.mail-table td:nth-child(8) {
+  display: none;
+}
+
+/* メモ */
+.mail-table th:nth-child(9),
+.mail-table td:nth-child(9) {
+  width: auto;
+  text-align: left;
+}
+
+/* 状態 */
+.mail-table th:nth-child(10),
+.mail-table td:nth-child(10) {
+  width: 105px;
+}
+
+/* 修正 */
+.mail-table th:nth-child(11),
+.mail-table td:nth-child(11) {
+  width: 58px;
+}
+
+/* 削除 */
+.mail-table th:nth-child(12),
+.mail-table td:nth-child(12) {
+  width: 58px;
+}
+
+.mail-table tbody tr:hover td {
+  background-color: #eef2ff;
+}
+
+.mail-table .editing-row td {
+  background-color: #fff3cd;
+}
+/* =========================
+   ボタン
+========================= */
+
+.mail-table .btn {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+/* =========================
+   合計
+========================= */
+
+.total-row {
+  text-align: right;
+  font-size: 15px;
+  font-weight: 800;
+  margin-top: 6px;
+}

@@ -1,4 +1,5 @@
 /* MailForm.css */
+/* 郵便入力フォーム専用 */
 
 .card-form {
   max-width: 1080px;
@@ -15,6 +16,7 @@
   align-items: center;
   gap: 14px;
   margin-bottom: 10px;
+  flex-wrap: nowrap;
 }
 
 .form-item {
@@ -61,7 +63,7 @@
 }
 
 .w-bank {
-  width: 260px;
+  width: 300px;
 }
 
 .form-line-bottom {
@@ -90,13 +92,23 @@
   opacity: 0.95;
   cursor: not-allowed;
 }
-.top-menu-btn {
-  width: 260px;
-  height: 44px;
-  font-size: 16px;
-  font-weight: 700;
+
+.card-form .form-control:focus,
+.card-form .form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.18);
 }
-.top-menu-btn.active {
-  background-color: #0d6efd;
-  color: white;
+
+.card-form .text-muted.small {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* 旧編集フォームは廃止 */
+.edit-panel,
+.edit-form-grid,
+.edit-form-actions {
+  display: none;
 }

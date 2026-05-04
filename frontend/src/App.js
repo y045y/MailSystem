@@ -1,5 +1,5 @@
-import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './App.css';
 import React, { useState, useEffect } from 'react';
 import MailForm from './components/MailForm';
 import MailListTransfers from './components/MailListTransfers';
@@ -28,9 +28,6 @@ const App = () => {
   const [receivedEndDate, setReceivedEndDate] = useState('');
 
   const [isCustomRange, setIsCustomRange] = useState(false);
-
-  // ★ 取引先絞り込み（振込・引落で共有）
-  const [selectedClientId, setSelectedClientId] = useState(null);
 
   // 月切り替え…
   const setMonthAndDates = (year, month) => {
@@ -119,7 +116,7 @@ const App = () => {
 
           {/* 月切り替え or 期間表示ラベル */}
           <div className="mb-3">
-            <label className="d-block mb-2">
+            <label className="display-month-label">
               {isCustomRange
                 ? `表示期間: ${startDate || '未選択'} ～ ${endDate || '未選択'}`
                 : `表示する月: ${selectedMonth}`}
@@ -127,22 +124,19 @@ const App = () => {
             <div>
               <button
                 onClick={handlePrevMonth}
-                className="btn btn-secondary me-2"
-                style={{ minWidth: '80px' }}
+                className="btn btn-secondary top-menu-btn month-nav-btn me-2"
               >
                 前月
               </button>
               <button
                 onClick={handleThisMonth}
-                className="btn btn-secondary me-2"
-                style={{ minWidth: '80px' }}
+                className="btn btn-secondary top-menu-btn month-nav-btn me-2"
               >
                 当月
               </button>
               <button
                 onClick={handleNextMonth}
-                className="btn btn-secondary"
-                style={{ minWidth: '80px' }}
+                className="btn btn-secondary top-menu-btn month-nav-btn me-2"
               >
                 次月
               </button>
@@ -150,26 +144,32 @@ const App = () => {
           </div>
 
           {/* 支払日（振込・引落） */}
-          <div style={{ marginBottom: '30px' }}>
-            <label>支払日（開始）:</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setIsCustomRange(true); // ★ 手で変えたら「期間モード」
-              }}
-              style={{ marginRight: '20px' }}
-            />
-            <label>支払日（終了）:</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setIsCustomRange(true); // ★ 同上
-              }}
-            />
+          <div className="date-range-line">
+            <div className="form-item">
+              <label className="form-label">開始</label>
+              <input
+                type="date"
+                className="form-control form-sm w-date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setIsCustomRange(true);
+                }}
+              />
+            </div>
+
+            <div className="form-item">
+              <label className="form-label">終了</label>
+              <input
+                type="date"
+                className="form-control form-sm w-date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setIsCustomRange(true);
+                }}
+              />
+            </div>
           </div>
 
           {/* 一覧 */}
@@ -179,12 +179,11 @@ const App = () => {
             endDate={endDate}
             reloadKey={reloadKey}
           />
-          <MailListWithdrawals
+          {/* <MailListWithdrawals
             month={selectedMonth}
             startDate={startDate}
             endDate={endDate}
             reloadKey={reloadKey}
-            selectedClientId={selectedClientId}
           />
           <MailListNotices
             month={selectedMonth}
@@ -197,7 +196,7 @@ const App = () => {
             startDate={receivedStartDate}
             endDate={receivedEndDate}
             reloadKey={reloadKey}
-          />
+          /> */}
         </>
       ) : selectedTab === 'client' ? (
         <ClientMaster />

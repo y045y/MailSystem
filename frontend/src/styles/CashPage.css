@@ -1,0 +1,41 @@
+/* CashPage.css */
+/* キャッシュ画面専用 */
+
+/* 入力フォーム幅調整 */
+.cash-form .w-bank {
+  width: 180px;
+}
+
+.cash-form .w-date {
+  width: 150px;
+}
+
+.cash-form .w-amount {
+  width: 160px;
+}
+
+.cash-form .form-note {
+  flex: 0 0 180px;
+}
+
+.cash-form .form-note input {
+  width: 100%;
+}
+
+.cash-form .btn-submit {
+  width: 140px;
+}
+
+/* キャッシュ一覧 */
+.cash-section-title {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 22px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.cash-total-row td {
+  font-weight: 900;
+  background-color: #f8f9fa;
+}

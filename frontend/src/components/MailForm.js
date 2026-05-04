@@ -1,209 +1,253 @@
 // MailForm.js
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import '../styles/FormCommon.css';
 import '../styles/MailForm.css';
 
 const MailForm = ({ onReload }) => {
-  // ▼ 共通関数（先に書く）
   const getTodayJST = () => {
     const d = new Date();
     d.setHours(d.getHours() + 9);
     return d.toISOString().slice(0, 10);
   };
 
-  const normalizeText = (value) => {
-    return String(value || '')
+  const normalizeText = (value) =>
+    String(value || '')
       .normalize('NFKC')
       .toLowerCase()
       .replace(/\s+/g, '');
+
+  const toNumberOrNull = (value) => {
+    if (value === '' || value === null || value === undefined) return null;
+    const n = Number(value);
+    return Number.isNaN(n) ? null : n;
   };
 
-  const [formData, setFormData] = useState({
+  const makeAccountName = (bankName, bankAccount, emptyText = '') => {
+    if (!bankName && !bankAccount) return emptyText;
+    return `${bankName || ''}（${bankAccount || ''}）`;
+  };
+
+  const getAccountNameByType = (type, client) => {
+    if (!client) return '';
+
+    if (type === '振込') {
+      return makeAccountName(client.bank_name, client.bank_account, '振込先口座未登録');
+    }
+
+    if (type === '引落') {
+      const company = client.withdrawal_company;
+      if (!company) return '引落口座未登録';
+      return makeAccountName(company.bank_name, company.bank_account, '引落口座未登録');
+    }
+
+    return '';
+  };
+
+  const initialForm = {
     received_at: getTodayJST(),
-    sender: '',
     type: '',
+    client_id: '',
     payment_date: '',
     amount: '',
+    category_id: '',
+    bank_account_name: '',
     description: '',
     note: '',
-    category_id: '',
     status: '未処理',
-    bank_account_id: '',
-  });
+  };
 
+  const [formData, setFormData] = useState(initialForm);
   const [clients, setClients] = useState([]);
-  const [bankAccounts, setBankAccounts] = useState([]);
-  const [clientFilter, setClientFilter] = useState('');
   const [categories, setCategories] = useState([]);
+  const [clientFilter, setClientFilter] = useState('');
 
-  // 取引先マスタ取得
+  const receivedRef = useRef(null);
+  const typeRef = useRef(null);
+  const clientRef = useRef(null);
+  const categoryRef = useRef(null);
+  const amountRef = useRef(null);
+  const paymentDateRef = useRef(null);
+  const noteRef = useRef(null);
+  const submitRef = useRef(null);
+
+  const selectedClient = useMemo(() => {
+    return clients.find((client) => String(client.id) === String(formData.client_id));
+  }, [clients, formData.client_id]);
+
+  const filteredClients = useMemo(() => {
+    const keyword = normalizeText(clientFilter);
+    if (!keyword) return clients;
+
+    return clients.filter((client) => normalizeText(client.name).includes(keyword));
+  }, [clients, clientFilter]);
+
+  const isPaymentType = formData.type === '振込' || formData.type === '引落';
+
   useEffect(() => {
     axios
       .get('http://localhost:5000/clients')
-      .then((response) => setClients(response.data))
-      .catch((error) => console.error('クライアントデータの取得に失敗:', error));
-  }, []);
-  const filteredClients = useMemo(() => {
-    const keyword = normalizeText(clientFilter);
+      .then((res) => setClients(Array.isArray(res.data) ? res.data : []))
+      .catch((err) => console.error('取引先取得失敗:', err));
 
-    if (!keyword) return clients;
-
-    return clients.filter((client) => {
-      const name = normalizeText(client.name);
-      return name.includes(keyword);
-    });
-  }, [clients, clientFilter]);
-  //費目取得
-  useEffect(() => {
     axios
       .get('http://localhost:5000/categories')
-      .then((res) => setCategories(res.data))
+      .then((res) => setCategories(Array.isArray(res.data) ? res.data : []))
       .catch((err) => console.error('費目取得失敗:', err));
   }, []);
 
-  // 口座情報取得
-  useEffect(() => {
-    const fetchBankAccounts = async () => {
-      try {
-        if (!formData.type || !formData.sender) {
-          setBankAccounts([]);
-          return;
-        }
+  const moveFocus = (nextRef) => {
+    nextRef?.current?.focus();
+    nextRef?.current?.select?.();
+  };
 
-        const res = await axios.get(`http://localhost:5000/clients/${formData.sender}`);
-        const client = res.data;
+  const handleEnter = (e, nextRef) => {
+    if (e.key !== 'Enter') return;
 
-        // 振込 → 取引先の振込口座
-        if (formData.type === '振込') {
-          if (client.bank_name && client.bank_account) {
-            setBankAccounts([
-              {
-                id: client.id,
-                name: `${client.bank_name}（${client.bank_account}）`,
-              },
-            ]);
-          } else {
-            setBankAccounts([]);
-          }
-          return;
-        }
+    e.preventDefault();
 
-        // 引落・カード請求 → 取引先マスタに紐づく会社マスタ口座
-        if (formData.type === '引落' || formData.type === 'カードの請求書') {
-          if (client.withdrawal_company) {
-            setBankAccounts([
-              {
-                id: client.withdrawal_company.id,
-                name: `${client.withdrawal_company.bank_name}（${client.withdrawal_company.bank_account}）`,
-              },
-            ]);
-          } else {
-            setBankAccounts([]);
-          }
-          return;
-        }
+    if (e.ctrlKey) {
+      handleSubmit();
+      return;
+    }
 
-        setBankAccounts([]);
-      } catch (err) {
-        console.error('口座情報の取得に失敗:', err);
-        setBankAccounts([]);
-      }
-    };
+    moveFocus(nextRef);
+  };
 
-    fetchBankAccounts();
-  }, [formData.type, formData.sender]);
+  const handleChangeType = (e) => {
+    const nextType = e.target.value;
 
-  // 共通 change
-  const handleChange = (e) => {
+    setFormData((prev) => {
+      const client = clients.find((item) => String(item.id) === String(prev.client_id));
+
+      return {
+        ...prev,
+        type: nextType,
+        amount: nextType === '振込' || nextType === '引落' ? prev.amount : '',
+        payment_date: nextType === '振込' || nextType === '引落' ? prev.payment_date : '',
+        bank_account_name: getAccountNameByType(nextType, client),
+      };
+    });
+  };
+
+  const handleClientInput = (e) => {
+    const inputValue = e.target.value;
+    setClientFilter(inputValue);
+
+    const client = clients.find((item) => normalizeText(item.name) === normalizeText(inputValue));
+
+    setFormData((prev) => ({
+      ...prev,
+      client_id: client ? String(client.id) : '',
+      bank_account_name: client ? getAccountNameByType(prev.type, client) : '',
+    }));
+  };
+
+  const handleSimpleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
-  const handleTypeChange = (e) => {
-    const newType = e.target.value;
 
+  const buildPayload = () => ({
+    client_id: toNumberOrNull(formData.client_id),
+    received_at: formData.received_at || null,
+    type: formData.type || null,
+    payment_date: isPaymentType ? formData.payment_date || null : null,
+    amount: isPaymentType ? Number(formData.amount || 0) : null,
+    category_id: toNumberOrNull(formData.category_id),
+    description: formData.description || '',
+    note: formData.note || '',
+    status: formData.status || '未処理',
+
+    // 口座は client_master / withdrawal_company から参照するため、
+    // mails.bank_account_id には保存しない。
+    bank_account_id: null,
+  });
+
+  const resetAfterSubmit = () => {
     setFormData((prev) => ({
-      ...prev,
-      type: newType,
-      sender: '',
-      bank_account_id: '',
-      amount: '',
-      payment_date: '',
+      ...initialForm,
+      received_at: prev.received_at || getTodayJST(),
+      type: prev.type,
+      payment_date: prev.payment_date,
+      category_id: prev.category_id,
     }));
 
     setClientFilter('');
-    setBankAccounts([]);
+
+    setTimeout(() => {
+      moveFocus(clientRef);
+    }, 0);
   };
 
-  // 送信
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
 
-    const dataToSend = {
-      client_id: formData.sender ? parseInt(formData.sender, 10) : null,
-      received_at: formData.received_at || null,
-      payment_date: formData.payment_date || null,
-      amount: formData.amount ? parseFloat(formData.amount) : 0,
-      category_id: formData.category_id ? parseInt(formData.category_id, 10) : null,
-      description: formData.description || '',
-      note: formData.note || '',
-      status: formData.status,
-      type: formData.type,
-      bank_account_id: formData.bank_account_id ? parseInt(formData.bank_account_id, 10) : null,
-    };
+    if (!formData.type) {
+      alert('区分を選択してください');
+      moveFocus(typeRef);
+      return;
+    }
+
+    if (!formData.client_id) {
+      alert('取引先を選択してください');
+      moveFocus(clientRef);
+      return;
+    }
+
+    if (isPaymentType && !formData.payment_date) {
+      alert('支払日を入力してください');
+      moveFocus(paymentDateRef);
+      return;
+    }
+
+    if (isPaymentType && !formData.amount) {
+      alert('金額を入力してください');
+      moveFocus(amountRef);
+      return;
+    }
 
     axios
-      .post('http://localhost:5000/mails', dataToSend)
-      .then((response) => {
-        console.log('データが送信されました:', response.data);
-        setFormData({
-          received_at: getTodayJST(),
-          sender: '',
-          type: '',
-          payment_date: '',
-          amount: '',
-          description: '',
-          category_id: '',
-          note: '',
-          status: '未処理',
-          bank_account_id: '',
-        });
-        setClientFilter('');
-        setBankAccounts([]);
+      .post('http://localhost:5000/mails', buildPayload())
+      .then(() => {
+        resetAfterSubmit();
         if (onReload) onReload();
       })
-      .catch((error) => {
-        console.error('送信エラー:', error);
+      .catch((err) => {
+        console.error('郵便物登録失敗:', err);
+        alert('登録に失敗しました');
       });
   };
-  const isPaymentType = formData.type === '振込' || formData.type === '引落';
 
   return (
-    <form onSubmit={handleSubmit} className="mail-form card-form">
-      {/* 1行目：基本項目 */}
+    <form onSubmit={handleSubmit} className="form-card">
       <div className="form-line">
         <div className="form-item">
           <label className="form-label">受取日</label>
           <input
+            ref={receivedRef}
             type="date"
             name="received_at"
             value={formData.received_at}
-            onChange={handleChange}
+            onChange={handleSimpleChange}
+            onKeyDown={(e) => handleEnter(e, typeRef)}
             className="form-control form-sm w-date"
             required
           />
         </div>
 
         <div className="form-item">
-          <label className="form-label">区　分</label>
+          <label className="form-label">区分</label>
           <select
-            id="type"
+            ref={typeRef}
             name="type"
             value={formData.type}
-            onChange={handleTypeChange}
+            onChange={handleChangeType}
+            onKeyDown={(e) => handleEnter(e, clientRef)}
             className="form-select form-sm w-type"
             required
           >
@@ -218,35 +262,14 @@ const MailForm = ({ onReload }) => {
         <div className="form-item">
           <label className="form-label">取引先</label>
           <input
+            ref={clientRef}
             type="text"
-            list={formData.type ? 'client-list' : undefined}
-            value={
-              clients.find((client) => String(client.id) === String(formData.sender))?.name ||
-              clientFilter
-            }
-            onFocus={(e) => {
-              if (!formData.type) {
-                e.target.blur();
-                document.getElementById('type')?.focus();
-              }
-            }}
-            readOnly={!formData.type}
-            onChange={(e) => {
-              if (!formData.type) return;
-
-              const inputValue = e.target.value;
-              setClientFilter(inputValue);
-
-              const selectedClient = clients.find((client) => client.name === inputValue);
-
-              setFormData((prev) => ({
-                ...prev,
-                sender: selectedClient ? String(selectedClient.id) : '',
-                bank_account_id: '',
-              }));
-            }}
+            list="client-list"
+            value={selectedClient?.name || clientFilter}
+            onChange={handleClientInput}
+            onKeyDown={(e) => handleEnter(e, categoryRef)}
             className="form-control form-sm w-client"
-            placeholder={formData.type ? '入力' : '区分先に選択'}
+            placeholder="取引先名"
             required
           />
           <datalist id="client-list">
@@ -259,31 +282,33 @@ const MailForm = ({ onReload }) => {
         <div className="form-item">
           <label className="form-label">費目</label>
           <select
+            ref={categoryRef}
             name="category_id"
             value={formData.category_id}
-            onChange={handleChange}
+            onChange={handleSimpleChange}
+            onKeyDown={(e) => handleEnter(e, amountRef)}
             className="form-select form-sm w-category"
-            required
           >
             <option value="">選択</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* 2行目：支払系項目 */}
       <div className="form-line">
         <div className="form-item">
-          <label className="form-label">金　額 </label>
+          <label className="form-label">金額</label>
           <input
+            ref={amountRef}
             type="number"
             name="amount"
             value={formData.amount}
-            onChange={handleChange}
+            onChange={handleSimpleChange}
+            onKeyDown={(e) => handleEnter(e, paymentDateRef)}
             className="form-control form-sm w-amount"
             disabled={!isPaymentType}
             required={isPaymentType}
@@ -293,10 +318,12 @@ const MailForm = ({ onReload }) => {
         <div className="form-item">
           <label className="form-label">支払日</label>
           <input
+            ref={paymentDateRef}
             type="date"
             name="payment_date"
             value={formData.payment_date}
-            onChange={handleChange}
+            onChange={handleSimpleChange}
+            onKeyDown={(e) => handleEnter(e, noteRef)}
             className="form-control form-sm w-date"
             disabled={!isPaymentType}
             required={isPaymentType}
@@ -304,41 +331,43 @@ const MailForm = ({ onReload }) => {
         </div>
 
         <div className="form-item">
-          <label className="form-label">口　座</label>
-          <select
-            name="bank_account_id"
-            value={formData.bank_account_id}
-            onChange={handleChange}
-            className="form-select form-sm w-bank"
-            disabled={!isPaymentType}
-            required={isPaymentType}
-          >
-            <option value="">選択</option>
-            {bankAccounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
+          <label className="form-label">口座</label>
+          <input
+            type="text"
+            value={formData.bank_account_name || ''}
+            className="form-control form-sm w-bank"
+            placeholder="取引先から自動表示"
+            readOnly
+          />
         </div>
       </div>
 
-      {/* 3行目：メモ + 登録 */}
       <div className="form-line form-line-bottom">
         <div className="form-item form-note">
-          <label className="form-label">メ　 モ</label>
+          <label className="form-label">メモ</label>
           <input
+            ref={noteRef}
             type="text"
             name="note"
             value={formData.note}
-            onChange={handleChange}
+            onChange={handleSimpleChange}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
             className="form-control form-sm"
           />
         </div>
 
-        <button type="submit" className="btn btn-primary btn-submit">
+        <button ref={submitRef} type="submit" className="btn btn-primary btn-submit">
           登録
         </button>
+      </div>
+
+      <div className="text-muted small mt-1">
+        Enter：次項目 / メモ欄Enter：登録 / Ctrl+Enter：即登録
       </div>
     </form>
   );

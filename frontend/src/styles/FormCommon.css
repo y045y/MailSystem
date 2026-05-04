@@ -1,0 +1,164 @@
+/* FormCommon.css */
+/* 入力フォーム共通 */
+
+/* =========================
+   カード
+========================= */
+
+.form-card {
+  width: 100%;
+  max-width: 1080px;
+  min-height: 140px;
+  margin: 0 auto 18px;
+  padding: 16px 20px;
+  border: 1px solid #cfd4da;
+  border-radius: 6px;
+  background: #f8f9fa;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.form-help {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+/* =========================
+   行
+========================= */
+
+.form-line {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* ←これ追加 */
+  gap: 14px;
+  margin-bottom: 10px;
+}
+/* =========================
+   項目
+========================= */
+
+.form-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* =========================
+   ラベル
+========================= */
+
+.form-label {
+  margin-bottom: 0;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* =========================
+   入力サイズ
+========================= */
+
+.form-sm {
+  height: 42px;
+  padding: 6px 10px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 4px;
+}
+
+/* =========================
+   幅
+========================= */
+
+.w-date {
+  width: 160px;
+}
+
+.w-type {
+  width: 160px;
+}
+
+.w-client {
+  width: 260px;
+}
+
+.w-category {
+  width: 180px;
+}
+
+.w-amount {
+  width: 160px;
+  text-align: right;
+}
+
+.w-bank {
+  width: 300px;
+}
+
+/* =========================
+   下段
+========================= */
+
+.form-line-bottom {
+  margin-bottom: 0;
+}
+
+.form-note {
+  flex: 1;
+}
+
+.form-note input {
+  width: 90%;
+}
+
+/* =========================
+   ボタン
+========================= */
+
+.btn-submit {
+  height: 42px;
+  width: 160px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* =========================
+   disabled / readonly
+========================= */
+
+.form-card .form-control:disabled,
+.form-card .form-select:disabled,
+.form-card input[readonly] {
+  background-color: #e9ecef;
+  opacity: 0.95;
+  cursor: not-allowed;
+}
+
+/* =========================
+   フォーカス強化（電卓用）
+========================= */
+
+.form-card .form-control:focus,
+.form-card .form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.18);
+}
+
+/* =========================
+   操作説明
+========================= */
+
+.form-help {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
